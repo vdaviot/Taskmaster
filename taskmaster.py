@@ -8,6 +8,8 @@ def get_in_conf(arg, name, info):
 		if prog.get(name):
 			i = 0
 			while prog[prog.keys()[0]][i]:
+				if not prog[prog.keys()[0]][i]:
+					break
 				if prog[prog.keys()[0]][i].keys()[0] == info:
 					return prog[prog.keys()[0]][i].get(info)
 				i += 1
@@ -50,11 +52,23 @@ class Program(object):
 	def	get_time_period(self, arg):
 		return get_in_conf(arg, self.name, "timeperiod")
 
-	def	get_program_discard(self, arg):
-		return get_in_conf(arg, self.name, "discard")
+	def	get_program_discard_err(self, arg):
+		discard_err = get_in_conf(arg, self.name, "discard_err")
+		if str(discard_err)[0] == "~":
+			discard_err = os.environ["HOME"] + discard_err.replace(discard_err[:1], '')
+		return discard_err
+
+	def	get_program_discard_out(self, arg):
+		discard_out = get_in_conf(arg, self.name, "discard_out")
+		if str(discard_out)[0] == "~":
+			discard_out = os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
+		return discard_out
 
 	def	get_wd(self, arg):
-		return get_in_conf(arg, self.name, "wd")
+		last = get_in_conf(arg, self.name, "wd")
+		if last[0] == "~":
+			last = os.environ["HOME"] + last.replace(last[:1], '')
+		return last
 
 	def	get_umask(self, arg):
 		return get_in_conf(arg, self.name, "umask")
@@ -65,15 +79,16 @@ class Program(object):
 		print "Program {} settings/status:".format(self.name)
 		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
 		print "		- Program {} is {}.".format(self.name, self.status)
-		print "		- Restart status: ", self.restart
-		print "		- Boot status: ", self.boot
+		print "		- Restart status: {}.".format(self.restart)
+		print "		- Boot status: {}.".format(self.boot)
 		print "		- Program expected to return {}.".format(self.expected)
 		print "		- Timeout set to {}.".format(self.timeout)
 		print "		- If a problem happend, Taskmaster will restart {} {} times.".format(self.name, self.nb_restart)
 		print "		- {} will shutdown if {} is send.".format(self.name, self.stop_signal)
 		print "		- If a problem happend, {} will be kept alive for {} seconds.".format(self.name, self.time_period)
-		print "		- {} discard variable is set to {}.".format(self.name, self.discard)
-		print "		- Working directory set to {} .".format(self.wd)
+		print "		- {} stderr is set to {}.".format(self.name, self.discard_err)
+		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
+		print "		- Working directory set to {}.".format(self.wd)
 		print "		- Umask variable is set to {}.".format(self.umask)
 		print " "
 		print "----------------------------------------------"
@@ -82,7 +97,6 @@ class Program(object):
 		if self.boot == True:
 			i = self.number
 			while i > 0:
-				print "\n\noption = [{}]\n\n".format(self.options)
 				if self.options != None:
 					subprocess.Popen([self.name, self.options])
 				else:
@@ -91,6 +105,18 @@ class Program(object):
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i -= 1
+
+	def	redirect(self):
+		if self.discard_err != False or None:
+			self.fd_err = sys.stderr = open(self.discard_err, 'w')
+		if self.discard_out != False or None:
+			self.fd_out = sys.stdout = open(self.discard_out, 'w')
+
+	def	close_error_and_std(self):
+		if self.discard_out != False:
+			self.discard_out.close()
+		if self.discard_err != False:
+			self.discard_err.close()
 
 	def __init__(self, process_name, conf):
 		start = "start"
@@ -106,11 +132,13 @@ class Program(object):
 		self.nb_restart = self.get_nb_restart(start)
 		self.stop_signal = self.get_stop_signal(start)
 		self.time_period = self.get_time_period(start)
-		self.discard = self.get_program_discard(start)
+		self.discard_err = self.get_program_discard_err(start)
+		self.discard_out = self.get_program_discard_out(start)
 		self.wd = self.get_wd(start)
 		self.umask = self.get_umask(start)
 		self.gstatus()
 		self.options = self.get_options(start)
+		self.redirect()
 		self.launch()
 		# self.env = self.get_env()
 
@@ -131,6 +159,7 @@ class	Microshell(cmd.Cmd):
 	def do_reload(self, file):
 		'Reload the configuration file.'
 		for p in progs:
+			p.close_error_and_std()
 			del p
 		conf = None
 		conf = get_conf()

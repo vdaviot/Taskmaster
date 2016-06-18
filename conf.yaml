@@ -9,42 +9,29 @@ start:
             - expected: 0
             - timeout: 30
             - restarttry: 3
-            - stopsignal: 11
+            - stopsignal: SIGSEGV
             - timeperiod: 30
             - discard: False
+            - discard_err: ~/error.txt
+            - discard_out: False
             - env: False
             - wd: ~/Work
             - umask: False
-        - sleep:
-            - name: sleep
+        - pwd:
+            - name: pwd
             - nb: 2
-            - options: !!str 30
+            - options: None
+            - options: -L
             - boot: True
             - restart: True
             - expected: 0
             - timeout: 30
             - restarttry: 1
-            - stopsignal: null
+            - stopsignal: None
             - timeperiod: 30
             - discard: False
+            - discard_err: ~/error.txt
+            - discard_out: False
             - env: False
             - wd: ~/
             - umask: False
-            
-
-
-
-
-
-# print conf[arg]['programs'][0]
-# if 'boot' in conf[arg]['programs'][0]:
-# print conf[arg]['programs']['boot'][0]
-# self.boot = conf[arg]['programs']['boot'][0]
-# print self.boot
-                # else:
-# print "bite"
-                # print prog[prog.keys()[0][0]['restart']
-# i = 0
-# if prog[prog.keys()[0]][i] == 'boot':
-#     self.boot = prog[prog.keys()[0]][i]
-# i += 1
