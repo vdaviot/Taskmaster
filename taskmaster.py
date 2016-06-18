@@ -82,7 +82,10 @@ class Program(object):
 		if self.boot == True:
 			i = self.number
 			while i > 0:
-				subprocess.Popen([self.name, self.options])
+				if self.options != None:
+					subprocess.Popen([self.name, self.options])
+				else:
+					subprocess.Popen(self.name)
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
@@ -183,8 +186,6 @@ def start_progs():													#launch the prog on start
 	if 'start' in conf:
 		if 'programs' in conf['start']:
 			progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
-			# for p in progs:
-				# start(p.name)
 
 def init():															#init
 	global	conf
