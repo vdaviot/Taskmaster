@@ -9,7 +9,7 @@ start:
             - expected: 0
             - timeout: 30
             - restarttry: 3
-            - stopsignal: SIGSEGV
+            - stopsignal: 11
             - timeperiod: 30
             - discard: False
             - discard_err: ~/error.txt
@@ -17,17 +17,16 @@ start:
             - env: False
             - wd: ~/Work
             - umask: False
-        - pwd:
-            - name: pwd
+        - sleep:
+            - name: sleep
             - nb: 2
-            - options: None
-            - options: -L
+            - options: !!str 30
             - boot: True
             - restart: True
             - expected: 0
             - timeout: 30
             - restarttry: 1
-            - stopsignal: None
+            - stopsignal: 15
             - timeperiod: 30
             - discard: False
             - discard_err: ~/error.txt

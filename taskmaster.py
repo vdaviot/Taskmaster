@@ -184,9 +184,10 @@ class	Microshell(cmd.Cmd):
 		'Kill a process by his PID or name.'
 		for p in progs:
 			if p.name == process_name:
+				sign = p.stop_signal()
 				for pid in p.get_pid().split():
-					print "[{}] -> [{}]".format(pid, signal.SIGTERM)
-					os.kill(int(pid), signal.SIGTERM)
+					print "[{}] -> [{}]".format(pid, sign)
+					os.kill(int(pid), sign)
 					print "Process " + process_name + " killed."
 
 	def close(self):
