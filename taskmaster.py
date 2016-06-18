@@ -82,6 +82,7 @@ class Program(object):
 		if self.boot == True:
 			i = self.number
 			while i > 0:
+				print "\n\noption = [{}]\n\n".format(self.options)
 				if self.options != None:
 					subprocess.Popen([self.name, self.options])
 				else:
