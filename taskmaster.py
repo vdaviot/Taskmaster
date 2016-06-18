@@ -3,19 +3,20 @@ import cmd, sys, os, signal, yaml, datetime, time, subprocess
 
 from subprocess import check_output, Popen
 
-def get_in_conf(arg, name, info):
-	for prog in conf[arg]['programs']:
-		if prog.get(name):
-			i = 0
-			while prog[prog.keys()[0]][i]:
-				if not prog[prog.keys()[0]][i]:
-					break
-				if prog[prog.keys()[0]][i].keys()[0] == info:
-					return prog[prog.keys()[0]][i].get(info)
-				i += 1
-	return None
 
 class Program(object):
+
+	def get_in_conf(self, arg, name, info):
+		for prog in conf[arg]['programs']:
+			if prog.get(name):
+				i = 0
+				while prog[prog.keys()[0]][i]:
+					if not prog[prog.keys()[0]][i]:
+						break
+					if prog[prog.keys()[0]][i].keys()[0] == info:
+						return prog[prog.keys()[0]][i].get(info)
+					i += 1
+		return None
 
 	def get_pid(self):
 		return os.popen("pgrep " + self.name).read()
@@ -26,52 +27,52 @@ class Program(object):
 		return 'DEAD'
 
 	def get_nb(self, arg):
-		return get_in_conf(arg, self.name, "nb")
+		return self.get_in_conf(arg, self.name, "nb")
 
 	def get_options(self, arg):
-		return get_in_conf(arg, self.name, "options")
+		return self.get_in_conf(arg, self.name, "options")
 
 	def get_boot(self, arg):
-		return get_in_conf(arg, self.name, "boot")
+		return self.get_in_conf(arg, self.name, "boot")
 
 	def get_restart(self, arg):
-		return get_in_conf(arg, self.name, "restart")
+		return self.get_in_conf(arg, self.name, "restart")
 
 	def	get_expected(self, arg):
-		return get_in_conf(arg, self.name, "expected")
+		return self.get_in_conf(arg, self.name, "expected")
 
 	def	get_timeout(self, arg):
-		return get_in_conf(arg, self.name, "timeout")
+		return self.get_in_conf(arg, self.name, "timeout")
 
 	def	get_nb_restart(self, arg):
-		return get_in_conf(arg, self.name, "restarttry")
+		return self.get_in_conf(arg, self.name, "restarttry")
 
 	def	get_stop_signal(self, arg):
-		return get_in_conf(arg, self.name, "stopsignal")
+		return self.get_in_conf(arg, self.name, "stopsignal")
 
 	def	get_time_period(self, arg):
-		return get_in_conf(arg, self.name, "timeperiod")
+		return self.get_in_conf(arg, self.name, "timeperiod")
 
 	def	get_program_discard_err(self, arg):
-		discard_err = get_in_conf(arg, self.name, "discard_err")
+		discard_err = self.get_in_conf(arg, self.name, "discard_err")
 		if str(discard_err)[0] == "~":
 			discard_err = os.environ["HOME"] + discard_err.replace(discard_err[:1], '')
 		return discard_err
 
 	def	get_program_discard_out(self, arg):
-		discard_out = get_in_conf(arg, self.name, "discard_out")
+		discard_out = self.get_in_conf(arg, self.name, "discard_out")
 		if str(discard_out)[0] == "~":
 			discard_out = os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
 		return discard_out
 
 	def	get_wd(self, arg):
-		last = get_in_conf(arg, self.name, "wd")
+		last = self.get_in_conf(arg, self.name, "wd")
 		if last[0] == "~":
 			last = os.environ["HOME"] + last.replace(last[:1], '')
 		return last
 
 	def	get_umask(self, arg):
-		return get_in_conf(arg, self.name, "umask")
+		return self.get_in_conf(arg, self.name, "umask")
 
 	def gstatus(self):
 		print "----------------------------------------------"
@@ -222,14 +223,6 @@ def init():															#init
 	global	conf
 	conf = get_conf()
 	start_progs()
-
-"""
-	if 'log' in conf :
-	   if 'stderr' in conf['log'] :
-	       sys.stderr = open(conf['log']['stderr'], 'a')
-	   if 'stdout' in conf['log'] :
-	       sys.stdout = open(conf['log']['stdout'], 'a')
-"""
 
 if __name__ == '__main__':											#main
 	init()
