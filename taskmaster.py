@@ -114,9 +114,9 @@ class Program(object):
 
 	def	close_error_and_std(self):
 		if self.discard_out != False:
-			self.discard_out.close()
+			self.fd_out.close()
 		if self.discard_err != False:
-			self.discard_err.close()
+			self.fd_err.close()
 
 	def __init__(self, process_name, conf):
 		start = "start"
