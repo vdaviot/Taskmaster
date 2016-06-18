@@ -81,17 +81,12 @@ class Program(object):
 	def	launch(self):
 		if self.boot == True:
 			i = self.number
-			while i >= 0:
-				if self.options != None:
-					cmd = self.name + " " + self.options
-				else:
-					cmd = self.name
-				os.system(cmd)
+			while i > 0:
+				subprocess.Popen([self.name, self.options])
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i -= 1
-				cmd = None
 
 	def __init__(self, process_name, conf):
 		start = "start"
@@ -150,15 +145,16 @@ class	Microshell(cmd.Cmd):
 		print pid
 
 	def	do_start(self, process_name):
-		os.system(process_name)
+		subprocess.Popen(process_name)
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
-		if process_name:
-			cmd = os.path(process_name)
-			print cmd
-			os.kill(cmd, signal.SIGTERM)
-			print "Process " + process_name + " killed."
+		for p in progs:
+			if p.name == process_name:
+				for pid in p.get_pid().split():
+					print "[{}] -> [{}]".format(pid, signal.SIGTERM)
+					os.kill(int(pid), signal.SIGTERM)
+					print "Process " + process_name + " killed."
 
 	def close(self):
 		if self.file:
