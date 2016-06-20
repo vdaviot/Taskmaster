@@ -26,6 +26,17 @@ class Program(object):
 			return 'RUNNING'
 		return 'DEAD'
 
+	# def	set_env(self, env):
+	# 	for var in env:
+	# 		os.environ[env[var]] = var
+	# 		print os.environ[env[var]]
+
+	def	get_env(self, arg):
+		return self.get_in_conf(arg, self.name, "env")
+
+	def	get_old_env(self):
+		return os.environ
+
 	def get_nb(self, arg):
 		return self.get_in_conf(arg, self.name, "nb")
 
@@ -80,6 +91,7 @@ class Program(object):
 		print "Program {} settings/status:".format(self.name)
 		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
 		print "		- Program {} is {}.".format(self.name, self.status)
+		print "		- {} instance of {} program needed.".format(self.number, self.name)
 		print "		- Restart status: {}.".format(self.restart)
 		print "		- Boot status: {}.".format(self.boot)
 		print "		- Program expected to return {}.".format(self.expected)
@@ -91,6 +103,8 @@ class Program(object):
 		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
 		print "		- Working directory set to {}.".format(self.wd)
 		print "		- Umask variable is set to {}.".format(self.umask)
+		# if self.env != 'False':
+			# print "		- Specified environment "
 		print " "
 		print "----------------------------------------------"
 
@@ -98,10 +112,14 @@ class Program(object):
 		if self.boot == True:
 			i = self.number
 			while i > 0:
+				cmd = self.name
 				if self.options != None:
-					subprocess.Popen([self.name, self.options])
-				else:
-					subprocess.Popen(self.name)
+					cmd = cmd + " " + self.options
+				if self.new_env != False:
+					for var in self.new_env:
+						cmd = var.keys()[0] + "=" + str(var.get(var.keys()[0])) + " " + cmd
+				print cmd
+				subprocess.Popen(cmd, shell=True)
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
@@ -137,11 +155,12 @@ class Program(object):
 		self.discard_out = self.get_program_discard_out(start)
 		self.wd = self.get_wd(start)
 		self.umask = self.get_umask(start)
+		self.old_env = self.get_old_env()
+		self.new_env = self.get_env(start)
 		self.gstatus()
 		self.options = self.get_options(start)
 		self.redirect()
 		self.launch()
-		# self.env = self.get_env()
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
