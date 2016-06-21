@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal
 
 from subprocess import check_output, Popen
@@ -298,7 +299,7 @@ def init():															#init
 
 if __name__ == '__main__':											#main
 	init()
-	if len(sys.argv) > 1:
-		Microshell().onecmd(' '.join(sys.argv[1:]))
-	else:
-		Microshell().cmdloop()
+	# if len(sys.argv) > 1:
+	# 	Microshell().onecmd(' '.join(sys.argv[1:]))
+	# else:
+	Microshell().cmdloop()
