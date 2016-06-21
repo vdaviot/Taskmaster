@@ -8,7 +8,7 @@ global com
 com = {}
 
 def signal_handler(signal, frame):
-        print('You pressed Ctrl+C!')
+        print "You pressend {}.".format(signal)
         stop_process()
         sys.exit(0)
 
@@ -35,7 +35,6 @@ class MyThread(threading.Thread):
         self.prog_handler()
 
 class Program(object):
-
 	def get_kill(self):
 		for pid in self.get_pid().split():
 			if pid != None:
@@ -111,14 +110,12 @@ class Program(object):
 	def	get_program_discard_out(self, arg):
 		discard_out = self.get_in_conf(arg, self.name, "discard_out")
 		if str(discard_out)[0] == "~":
-			discard_out = os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
-		return discard_out
+			return os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
 
 	def	get_wd(self, arg):
 		last = self.get_in_conf(arg, self.name, "wd")
 		if last[0] == "~":
-			last = os.environ["HOME"] + last.replace(last[:1], '')
-		return last
+			return os.environ["HOME"] + last.replace(last[:1], '')
 
 	def	get_umask(self, arg):
 		return self.get_in_conf(arg, self.name, "umask")
@@ -151,11 +148,11 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				with open("stdout.txt", "wa") as f:
+				with open(self.discard_out, "wa") as f:
 					subprocess.Popen(cmd, shell=True, stdout=f)
-				verif = os.popen("echo $?").read()
-				if int(verif) != int(self.expected):
-					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
+					verif = os.popen("echo $?").read()
+					if int(verif) != int(self.expected):
+						print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
 
 	def	redirect(self):
@@ -163,12 +160,6 @@ class Program(object):
 			self.fd_err = sys.stderr = open(self.discard_err, 'w')
 		if self.discard_out != False or None:
 			self.fd_out = sys.stdout = open(self.discard_out, 'w')
-
-	def	close_error_and_std(self):
-		if self.discard_out != False:
-			self.fd_out.close()
-		if self.discard_err != False:
-			self.fd_err.close()
 
 	def __init__(self, process_name, conf):
 		start = "start"
@@ -190,9 +181,7 @@ class Program(object):
 		self.umask = self.get_umask(start)
 		self.old_env = self.get_old_env()
 		self.new_env = self.get_env(start)
-		#self.gstatus()
 		self.options = self.get_options(start)
-		#self.redirect()
 		self.launch()
 		com[self.name] = "chill"
 
@@ -205,16 +194,20 @@ class	Microshell(cmd.Cmd):
 	file = None	
 
 
-	def	do_status(self, file): # a modifier par la suite
+	def	do_status(self, name): # a modifier par la suite
 		'Give you the status of each programs described in the configuration file.'
-		for p in progs:
-			print "{} program is {}.".format(p.name, p.status)
-			p.gstatus()
+		if name != "":
+			for p in progs:
+				if p.name == name:
+					p.gstatus()
+					break
+		else:
+			for p in progs:
+				p.gstatus()
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
 		for p in progs:
-			p.close_error_and_std()
 			del p
 		conf = None
 		conf = get_conf()
@@ -227,21 +220,17 @@ class	Microshell(cmd.Cmd):
 		stop_process()
 		return True
 
-	def do_get_pid(self, process_name):
-		'Get the PID of the wanted program. Usage get_pid <program>.'
-		pid = os.popen("pgrep " + process_name).read()
-		print pid
-
 	def	do_start(self, process_name):
-		subprocess.Popen(process_name)
+		subprocess.Popen(process_name, shell=True)
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
 		if process_name in com:
 			if (com[process_name] == "chill"):
 				com[process_name] = "DIE!!!"
-			# elif (com[process_name == "dead"]):
-				# print "{} is busy".format(process_name)
+				print "Process {} killed.".format(process_name)
+			elif (com[process_name == "dead"]):
+				print "{} is not running.".format(process_name)
 			else:
 				print "{} is busy".format(process_name)
 		else:
@@ -262,11 +251,12 @@ def stop_process():
 				continue
 			finish()
 
-def	start(command):
-	'Start a new process. Usage start <command>.'
-	subprocess.Popen(command)
-
 def finish():														#end
+	for p in progs:
+		if p.discard_out:
+			sys.stdout = sys.__stdout__
+		if p.discard_err:
+			sys.stderr = sys.__stderr__
 	print ("\033[91mended:" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	quit()
 
@@ -284,12 +274,10 @@ def start_progs():													#launch the prog on start
 	if 'start' in conf:
 		if 'programs' in conf['start']:
 			for prog in conf['start']['programs']:
-				com[prog[prog.keys()[0]][0]['name']] = "coucou"
-				#print "bonjour\n\n{}\n\nAurevoir".format(prog[prog.keys()[0]][0]['name'])
+				progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
 				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
 				com[prog[prog.keys()[0]][0]['name']] = "starting"
 				mythread.start()
-				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf)
 
 def init():															#init
 	global	conf

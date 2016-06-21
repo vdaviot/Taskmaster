@@ -3,7 +3,7 @@ start:
         - sleep:
             - name: sleep
             - nb: 1
-            - options: !!str 30
+            - options: !!str 5
             - boot: True
             - restart: True
             - expected: 0
