@@ -1,10 +1,50 @@
 #!/usr/bin/python
-import cmd, sys, os, signal, yaml, datetime, time, subprocess
+import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal
 
 from subprocess import check_output, Popen
 
+global com
+com = {}
+
+def signal_handler(signal, frame):
+        print('You pressed Ctrl+C!')
+        stop_process()
+        sys.exit(0)
+
+class MyThread(threading.Thread):
+    def prog_handler(self):
+    	while (True):
+    		if com[self.name] == "DIE!!!":
+    			com[self.name] == "dying"
+    			self.prog.suicide()
+    			t = time.time()
+    			while (self.prog.get_pid()):
+    				if time.time() >= t + self.timeout:
+    					self.prog.get_kill()
+				com[self.name] = "dead"
+    			return
+    		elif com[self.name] == "STOP":
+    			self.prog.get_kill()
+    			com[self.name] = "dead"
+    			return
+    def run(self):
+        print("started!")           # affiche "Thread-x started!"
+        self.prog = Program(self.name, conf)
+        self.prog_handler()
 
 class Program(object):
+
+	def get_kill(self):
+		for pid in self.get_pid().split():
+			if pid != None:
+				os.kill(int(pid), 11)
+				print "Process " + self.name + " ended."
+	def suicide(self):
+		sign = self.get_stop_signal("start")
+		for pid in self.get_pid().split():
+			if pid != None:
+				os.kill(int(pid), sign)
+				print "Process " + self.name + " ended."
 
 	def get_in_conf(self, arg, name, info):
 		for prog in conf[arg]['programs']:
@@ -115,15 +155,16 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				if self.new_env != False:
-					for var in self.new_env:
-						cmd = var.keys()[0] + "=" + str(var.get(var.keys()[0])) + " " + cmd
-				print cmd
-				subprocess.Popen(cmd, shell=True)
+				#if self.new_env != False:
+				#	for var in self.new_env:
+				#		cmd = var.keys()[0] + "=" + str(var.get(var.keys()[0])) + " " + cmd
+				#print cmd
+				with open("stdout.txt", "wa") as f:
+					subprocess.Popen(cmd, shell=True, stdout=f)
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
-				i -= 1
+				i  = i - 1
 
 	def	redirect(self):
 		if self.discard_err != False or None:
@@ -157,10 +198,11 @@ class Program(object):
 		self.umask = self.get_umask(start)
 		self.old_env = self.get_old_env()
 		self.new_env = self.get_env(start)
-		self.gstatus()
+		#self.gstatus()
 		self.options = self.get_options(start)
-		self.redirect()
+		#self.redirect()
 		self.launch()
+		com[self.name] = "chill"
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -189,7 +231,7 @@ class	Microshell(cmd.Cmd):
 		'Exit the program.'
 		print "Thank you for using Taskmaster.{}".format(arg)
 		self.close()
-		finish()
+		stop_process()
 		return True
 
 	def do_get_pid(self, process_name):
@@ -202,18 +244,37 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
-		for p in progs:
-			if p.name == process_name:
-				sign = p.stop_signal()
-				for pid in p.get_pid().split():
-					print "[{}] -> [{}]".format(pid, sign)
-					os.kill(int(pid), sign)
-					print "Process " + process_name + " killed."
+		if process_name in com:
+			if (com[process_name] == "chill"):
+				com[process_name] = "DIE!!!"
+			elif (com[process_name == "dead"]):
+				print "{} is busy".format(process_name)
+			else:
+				print "{} is busy".format(process_name)
+		else:
+			print "{} is not in prog list".format(process_name)
+		#for p in progs:
+		#	if p.name == process_name:
+		#		sign = p.stop_signal()
+		#		for pid in p.get_pid().split():
+		#			print "[{}] -> [{}]".format(pid, sign)
+		#			os.kill(int(pid), sign)
+		#			print "Process " + process_name + " killed."
 
 	def close(self):
 		if self.file:
 			self.file.close()
 			self.file = None
+
+def stop_process():
+	print com.items()
+	for i, j in com.items():
+		com[i] = "STOP"
+	while True:
+		for i, j in com.items():
+			if com[i] != "dead":
+				continue
+			finish()
 
 def	start(command):
 	'Start a new process. Usage start <command>.'
@@ -236,10 +297,17 @@ def start_progs():													#launch the prog on start
 	progs = []
 	if 'start' in conf:
 		if 'programs' in conf['start']:
-			progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
+			for prog in conf['start']['programs']:
+				com[prog[prog.keys()[0]][0]['name']] = "coucou"
+				#print "bonjour\n\n{}\n\nAurevoir".format(prog[prog.keys()[0]][0]['name'])
+				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+				com[prog[prog.keys()[0]][0]['name']] = "starting"
+				mythread.start()
+				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf)
 
 def init():															#init
 	global	conf
+	signal.signal(signal.SIGINT, signal_handler)
 	conf = get_conf()
 	start_progs()
 
