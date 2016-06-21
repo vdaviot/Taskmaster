@@ -27,6 +27,7 @@ class MyThread(threading.Thread):
     			self.prog.get_kill()
     			com[self.name] = "dead"
     			return
+
     def run(self):
         print("started!")           # affiche "Thread-x started!"
         self.prog = Program(self.name, conf)
@@ -39,6 +40,7 @@ class Program(object):
 			if pid != None:
 				os.kill(int(pid), 11)
 				print "Process " + self.name + " ended."
+
 	def suicide(self):
 		sign = self.get_stop_signal("start")
 		for pid in self.get_pid().split():
@@ -65,11 +67,6 @@ class Program(object):
 		if self.pid:
 			return 'RUNNING'
 		return 'DEAD'
-
-	# def	set_env(self, env):
-	# 	for var in env:
-	# 		os.environ[env[var]] = var
-	# 		print os.environ[env[var]]
 
 	def	get_env(self, arg):
 		return self.get_in_conf(arg, self.name, "env")
@@ -143,8 +140,6 @@ class Program(object):
 		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
 		print "		- Working directory set to {}.".format(self.wd)
 		print "		- Umask variable is set to {}.".format(self.umask)
-		# if self.env != 'False':
-			# print "		- Specified environment "
 		print " "
 		print "----------------------------------------------"
 
@@ -155,10 +150,6 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				#if self.new_env != False:
-				#	for var in self.new_env:
-				#		cmd = var.keys()[0] + "=" + str(var.get(var.keys()[0])) + " " + cmd
-				#print cmd
 				with open("stdout.txt", "wa") as f:
 					subprocess.Popen(cmd, shell=True, stdout=f)
 				verif = os.popen("echo $?").read()
@@ -217,6 +208,7 @@ class	Microshell(cmd.Cmd):
 		'Give you the status of each programs described in the configuration file.'
 		for p in progs:
 			print "{} program is {}.".format(p.name, p.status)
+			p.gstatus()
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
@@ -247,19 +239,12 @@ class	Microshell(cmd.Cmd):
 		if process_name in com:
 			if (com[process_name] == "chill"):
 				com[process_name] = "DIE!!!"
-			elif (com[process_name == "dead"]):
-				print "{} is busy".format(process_name)
+			# elif (com[process_name == "dead"]):
+				# print "{} is busy".format(process_name)
 			else:
 				print "{} is busy".format(process_name)
 		else:
 			print "{} is not in prog list".format(process_name)
-		#for p in progs:
-		#	if p.name == process_name:
-		#		sign = p.stop_signal()
-		#		for pid in p.get_pid().split():
-		#			print "[{}] -> [{}]".format(pid, sign)
-		#			os.kill(int(pid), sign)
-		#			print "Process " + process_name + " killed."
 
 	def close(self):
 		if self.file:
@@ -313,4 +298,7 @@ def init():															#init
 
 if __name__ == '__main__':											#main
 	init()
-	Microshell().cmdloop()
+	if len(sys.argv) > 1:
+		Microshell().onecmd(' '.join(sys.argv[1:]))
+	else:
+		Microshell().cmdloop()
