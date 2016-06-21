@@ -2,7 +2,9 @@
 Little process managing program.
 
 Todo:
+
 	shell:
+
 		- See the status of all the programs described in the config file ("status" command)
 
 		- Start / stop / restart programs
