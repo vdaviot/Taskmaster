@@ -8,7 +8,7 @@ global com
 com = {}
 
 def signal_handler(signal, frame):
-        print "You pressend {}.".format(signal)
+        print "You pressed {}.".format(signal)
         stop_process()
         sys.exit(0)
 
@@ -28,6 +28,8 @@ class MyThread(threading.Thread):
     			self.prog.get_kill()
     			com[self.name] = "dead"
     			return
+
+
 
     def run(self):
         print("started!")           # affiche "Thread-x started!"
@@ -59,6 +61,13 @@ class Program(object):
 						return prog[prog.keys()[0]][i].get(info)
 					i += 1
 		return None
+
+	def	get_timer(self):
+		at = time.time()
+		while (self.get_pid()):
+			if time.time >= at + int(self.time_period):
+				return True
+		return False
 
 	def get_pid(self):
 		return os.popen("pgrep " + self.name).read()
@@ -116,9 +125,11 @@ class Program(object):
 		last = self.get_in_conf(arg, self.name, "wd")
 		if last[0] == "~":
 			return os.environ["HOME"] + last.replace(last[:1], '')
+		return last
 
 	def	get_umask(self, arg):
-		return self.get_in_conf(arg, self.name, "umask")
+		var = self.get_in_conf(arg, self.name, "umask")
+		return os.umask(var)
 
 	def gstatus(self):
 		print "----------------------------------------------"
@@ -138,6 +149,10 @@ class Program(object):
 		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
 		print "		- Working directory set to {}.".format(self.wd)
 		print "		- Umask variable is set to {}.".format(self.umask)
+		if self.sstarted == True:
+			print "		- Program {} successfuly started.".format(self.name)
+		else:
+			print "		- Program {} not started because of reasons.".format(self.name)
 		print " "
 		print "----------------------------------------------"
 
@@ -148,11 +163,14 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				with open(self.discard_out, "wa") as f:
-					subprocess.Popen(cmd, shell=True, stdout=f)
-					verif = os.popen("echo $?").read()
-					if int(verif) != int(self.expected):
-						print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
+				if self.discard_out == False:
+					subprocess.Popen(cmd, shell=True)
+				elif self.discard_out:
+					with open(self.discard_out, "wa") as f:
+						subprocess.Popen(cmd, shell=True, stdout=f)
+				verif = os.popen("echo $?").read()
+				if int(verif) != int(self.expected):
+					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
 
 	def	redirect(self):
@@ -178,10 +196,18 @@ class Program(object):
 		self.discard_err = self.get_program_discard_err(start)
 		self.discard_out = self.get_program_discard_out(start)
 		self.wd = self.get_wd(start)
+		try:
+			os.chdir(self.wd)
+		except OSError:
+			print "{} directory does not exist.".format(self.wd)
 		self.umask = self.get_umask(start)
+		self.old_umask = os.umask(self.umask)
+		# self.fd = os.open("text.junk", os.O_CREAT | os.O_RDWR)
+		# os.close(self.fd)
 		self.old_env = self.get_old_env()
 		self.new_env = self.get_env(start)
 		self.options = self.get_options(start)
+		self.sstarted = self.get_timer()
 		self.launch()
 		com[self.name] = "chill"
 
@@ -189,10 +215,10 @@ class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
 	if "USER" in os.environ:
 		prompt = os.environ["USER"] + "@42>"
+		user = os.environ["USER"] + "@student.42.fr"
 	else:
 		prompt = "Anonymous@42>"
 	file = None	
-
 
 	def	do_status(self, name): # a modifier par la suite
 		'Give you the status of each programs described in the configuration file.'
@@ -208,6 +234,7 @@ class	Microshell(cmd.Cmd):
 	def do_reload(self, file):
 		'Reload the configuration file.'
 		for p in progs:
+			os.umask(p.old_umask)
 			del p
 		conf = None
 		conf = get_conf()
@@ -287,7 +314,4 @@ def init():															#init
 
 if __name__ == '__main__':											#main
 	init()
-	# if len(sys.argv) > 1:
-	# 	Microshell().onecmd(' '.join(sys.argv[1:]))
-	# else:
 	Microshell().cmdloop()
