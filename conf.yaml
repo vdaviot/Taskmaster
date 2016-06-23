@@ -14,8 +14,8 @@ start:
             - discard_err: ~/error.txt
             - discard_out: ~/redirect.txt
             - env: False
-            - wd: fdp
-            - umask: 0777
+            - wd: ~/Work/taskmaster
+            - umask: False
         - pwd:
             - name: pwd
             - nb: 1

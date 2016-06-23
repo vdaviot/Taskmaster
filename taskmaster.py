@@ -13,28 +13,31 @@ def signal_handler(signal, frame):
         sys.exit(0)
 
 class MyThread(threading.Thread):
-    def prog_handler(self):
-    	while (True):
-    		if com[self.name] == "DIE!!!":
-    			com[self.name] == "dying"
-    			self.prog.suicide()
-    			t = time.time()
-    			while (self.prog.get_pid()):
-    				if time.time() >= t + self.timeout:
-    					self.prog.get_kill()
+	def prog_handler(self):
+		while (True):
+			if com[self.name] == "DIE!!!":
+				com[self.name] == "dying"
+				self.prog.suicide()
+				t = time.time()
+				while (self.prog.get_pid()):
+					if time.time() >= t + self.timeout:
+						self.prog.get_kill()
 				com[self.name] = "dead"
-    			return
-    		elif com[self.name] == "STOP":
-    			self.prog.get_kill()
-    			com[self.name] = "dead"
-    			return
+				return
+			elif com[self.name] == "STOP":
+				self.prog.get_kill()
+				com[self.name] = "dead"
+				return
 
 
 
-    def run(self):
-        print("started!")           # affiche "Thread-x started!"
-        self.prog = Program(self.name, conf)
-        self.prog_handler()
+	def run(self):
+		print("started!")	   # affiche "Thread-x started!"
+		self.prog = Program(self.name, conf)
+		self.prog_handler()
+		# self.join()
+		# self.wait()
+
 
 class Program(object):
 	def get_kill(self):
@@ -164,10 +167,12 @@ class Program(object):
 				if self.options != None:
 					cmd = cmd + " " + self.options
 				if self.discard_out == False:
-					subprocess.Popen(cmd, shell=True)
+					p = subprocess.Popen(cmd, shell=True)
+					os.wnohang
 				elif self.discard_out:
 					with open(self.discard_out, "wa") as f:
-						subprocess.Popen(cmd, shell=True, stdout=f)
+						p = subprocess.Popen(cmd, shell=True, stdout=f)
+						os.wnohang()
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
@@ -234,7 +239,7 @@ class	Microshell(cmd.Cmd):
 	def do_reload(self, file):
 		'Reload the configuration file.'
 		for p in progs:
-			os.umask(p.old_umask)
+			# os.umask(p.old_umask)
 			del p
 		conf = None
 		conf = get_conf()
@@ -252,16 +257,11 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
-		if process_name in com:
-			if (com[process_name] == "chill"):
-				com[process_name] = "DIE!!!"
-				print "Process {} killed.".format(process_name)
-			elif (com[process_name == "dead"]):
-				print "{} is not running.".format(process_name)
-			else:
-				print "{} is busy".format(process_name)
-		else:
-			print "{} is not in prog list".format(process_name)
+		for p in progs:
+			if process_name == p.name:
+				os.kill(p.pid)
+				print "{} was killed.".format(p.name)
+				return
 
 	def close(self):
 		if self.file:
@@ -269,14 +269,16 @@ class	Microshell(cmd.Cmd):
 			self.file = None
 
 def stop_process():
-	print com.items()
-	for i, j in com.items():
-		com[i] = "STOP"
-	while True:
-		for i, j in com.items():
-			if com[i] != "dead":
-				continue
-			finish()
+	# print com.items()
+	# for i, j in com.items():
+	# 	com[i] = "STOP"
+	# while True:
+	# 	for i, j in com.items():
+	# 		if com[i] != "dead":
+	# 			continue
+	for p in progs:
+		Microshell.do_kill(p.name)
+	finish()
 
 def finish():														#end
 	for p in progs:
@@ -302,9 +304,13 @@ def start_progs():													#launch the prog on start
 		if 'programs' in conf['start']:
 			for prog in conf['start']['programs']:
 				progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
-				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-				com[prog[prog.keys()[0]][0]['name']] = "starting"
-				mythread.start()
+				# mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+				# print com
+				# com[prog[prog.keys()[0]][0]['name']] = "starting"
+				# mythread.start()
+				# mythread.join(float(5))
+			# for j in com:
+				# j.join(j.name)
 
 def init():															#init
 	global	conf
