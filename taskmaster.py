@@ -35,8 +35,10 @@ class MyThread(threading.Thread):
 		print("started!")	   # affiche "Thread-x started!"
 		self.prog = Program(self.name, conf)
 		self.prog_handler()
-		# self.join()
-		# self.wait()
+		# print self.prog.pid
+		# p = os.waitpid(self.prog.pid, os.WNOHANG)
+		# print p
+
 
 
 class Program(object):
@@ -168,11 +170,9 @@ class Program(object):
 					cmd = cmd + " " + self.options
 				if self.discard_out == False:
 					p = subprocess.Popen(cmd, shell=True)
-					os.wnohang
 				elif self.discard_out:
 					with open(self.discard_out, "wa") as f:
 						p = subprocess.Popen(cmd, shell=True, stdout=f)
-						os.wnohang()
 				verif = os.popen("echo $?").read()
 				if int(verif) != int(self.expected):
 					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
@@ -214,6 +214,7 @@ class Program(object):
 		self.options = self.get_options(start)
 		self.sstarted = self.get_timer()
 		self.launch()
+		p = os.waitpid(-1, os.WNOHANG)
 		com[self.name] = "chill"
 
 class	Microshell(cmd.Cmd):
@@ -241,7 +242,7 @@ class	Microshell(cmd.Cmd):
 		for p in progs:
 			# os.umask(p.old_umask)
 			del p
-		conf = None
+		
 		conf = get_conf()
 		start_progs()
 
@@ -257,11 +258,16 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
-		for p in progs:
-			if process_name == p.name:
-				os.kill(p.pid)
-				print "{} was killed.".format(p.name)
-				return
+		if process_name in com:
+			if (com[process_name] == "chill"):
+				com[process_name] = "DIE!!!"
+				print "Process {} killed.".format(process_name)
+			elif (com[process_name == "dead"]):
+				print "{} is not running.".format(process_name)
+			else:
+				print "{} is busy".format(process_name)
+		else:
+			print "{} is not in prog list".format(process_name)
 
 	def close(self):
 		if self.file:
@@ -269,16 +275,14 @@ class	Microshell(cmd.Cmd):
 			self.file = None
 
 def stop_process():
-	# print com.items()
-	# for i, j in com.items():
-	# 	com[i] = "STOP"
-	# while True:
-	# 	for i, j in com.items():
-	# 		if com[i] != "dead":
-	# 			continue
-	for p in progs:
-		Microshell.do_kill(p.name)
-	finish()
+	print com.items()
+	for i, j in com.items():
+		com[i] = "STOP"
+	while True:
+		for i, j in com.items():
+			if com[i] != "dead":
+				continue
+			finish()
 
 def finish():														#end
 	for p in progs:
@@ -304,13 +308,9 @@ def start_progs():													#launch the prog on start
 		if 'programs' in conf['start']:
 			for prog in conf['start']['programs']:
 				progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
-				# mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-				# print com
-				# com[prog[prog.keys()[0]][0]['name']] = "starting"
-				# mythread.start()
-				# mythread.join(float(5))
-			# for j in com:
-				# j.join(j.name)
+				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+				com[prog[prog.keys()[0]][0]['name']] = "starting"
+				mythread.start()
 
 def init():															#init
 	global	conf
