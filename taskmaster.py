@@ -5,6 +5,7 @@ import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal
 from subprocess import check_output, Popen
 
 global com
+global stream
 com = {}
 
 def signal_handler(signal, frame):
@@ -29,15 +30,10 @@ class MyThread(threading.Thread):
 				com[self.name] = "dead"
 				return
 
-
-
 	def run(self):
 		print("started!")	   # affiche "Thread-x started!"
 		self.prog = Program(self.name, conf)
 		self.prog_handler()
-		# print self.prog.pid
-		# p = os.waitpid(self.prog.pid, os.WNOHANG)
-		# print p
 
 
 
@@ -128,8 +124,9 @@ class Program(object):
 
 	def	get_wd(self, arg):
 		last = self.get_in_conf(arg, self.name, "wd")
-		if last[0] == "~":
-			return os.environ["HOME"] + last.replace(last[:1], '')
+		if last != False:
+			if last[0] == "~":
+				return os.environ["HOME"] + last.replace(last[:1], '')
 		return last
 
 	def	get_umask(self, arg):
@@ -201,14 +198,13 @@ class Program(object):
 		self.discard_err = self.get_program_discard_err(start)
 		self.discard_out = self.get_program_discard_out(start)
 		self.wd = self.get_wd(start)
-		try:
-			os.chdir(self.wd)
-		except OSError:
-			print "{} directory does not exist.".format(self.wd)
+		if self.wd != False:
+			try:
+				os.chdir(self.wd)
+			except OSError:
+				print "{} directory does not exist.".format(self.wd)
 		self.umask = self.get_umask(start)
 		self.old_umask = os.umask(self.umask)
-		# self.fd = os.open("text.junk", os.O_CREAT | os.O_RDWR)
-		# os.close(self.fd)
 		self.old_env = self.get_old_env()
 		self.new_env = self.get_env(start)
 		self.options = self.get_options(start)
@@ -239,10 +235,11 @@ class	Microshell(cmd.Cmd):
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
-		for p in progs:
+		# for p in progs:
 			# os.umask(p.old_umask)
-			del p
-		
+			# del p
+		# conf = None
+		# stream.close()
 		conf = get_conf()
 		start_progs()
 
@@ -293,13 +290,20 @@ def finish():														#end
 	print ("\033[91mended:" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	quit()
 
+
 def get_conf():														#return the configuration
-	with open("conf.yaml", 'r') as stream:
-		try:
-			return yaml.load(stream)
-		except yaml.YAMLError as exc:
-			print(exc)
-			return None
+	stream = open("conf.yaml", 'r')
+	try:
+		return yaml.load(stream)
+	except yaml.YAMLError as exc:
+		print exc
+		return None
+	# with open("conf.yaml", 'r') as stream:
+		# try:
+			# return yaml.load(stream)
+		# except yaml.YAMLError as exc:
+			# print(exc)
+			# return None
 
 def start_progs():													#launch the prog on start
 	global	progs

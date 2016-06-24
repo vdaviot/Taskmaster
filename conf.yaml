@@ -14,7 +14,7 @@ start:
             - discard_err: ~/error.txt
             - discard_out: ~/redirect.txt
             - env: False
-            - wd: ~/Work/taskmaster
+            - wd: False
             - umask: False
         - pwd:
             - name: pwd
@@ -33,5 +33,5 @@ start:
                 - HOME: /nfs/2014/v/vdaviot
                 - PATH: /nfs/2014/v/vdaviot/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/munki
                 - PWD: /nfs/2014/v/vdaviot/
-            - wd: ~/
+            - wd: False
             - umask: False
