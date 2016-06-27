@@ -17,27 +17,9 @@ def signal_handler(signal, frame):
         sys.exit(0)
 
 class MyThread(threading.Thread):
-	# def prog_handler(self):
-	# 	while (True):
-	# 		if com[self.name] == "DIE!!!":
-	# 			com[self.name] == "dying"
-	# 			self.prog.suicide()
-	# 			t = time.time()
-	# 			while (self.prog.get_pid()):
-	# 				if time.time() >= t + self.timeout:
-	# 					self.prog.get_kill()
-	# 			com[self.name] = "dead"
-	# 			return
-	# 		elif com[self.name] == "STOP":
-	# 			self.prog.get_kill()
-	# 			com[self.name] = "dead"
-	# 			return
-
 	def run(self):
 		self.prog = Program(self.name, conf)
 		return
-		#self.prog_handler()
-
 
 
 class Program(object):
@@ -56,7 +38,7 @@ class Program(object):
 				print "Process " + self.name + " ended."
 
 	def get_in_conf(self, arg, name, info):
-		for prog in conf[arg]['programs']:
+		for prog in conf[arg]:
 			if prog.get(name):
 				i = 0
 				while prog[prog.keys()[0]][i]:
@@ -83,11 +65,6 @@ class Program(object):
 		return 'DEAD'
 
 	def	get_env(self, arg):
-		# env = self.get_in_conf(arg, self.name, "env")
-		# if env == None or False:
-			# return None
-		# else:
-			# return env
 		return self.get_in_conf(arg, self.name, "env")
 
 	def	get_old_env(self):
@@ -176,21 +153,20 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				#if self.discard_out == False:
-				#	p = subprocess.Popen(cmd, shell=True)
-				#elif self.discard_out:
-				with open(self.discard_out, "wa") as f:
-					subprocess.Popen(cmd, shell=True, stdout=f)
-					try:
-						patience = os.waitpid(-1, 0)
-					except OSError, err:
-						com[self.name] = "ended"
-					# print "patience == {}".format(patience[1])
+				if self.discard_out != None:
+					with open(self.discard_out, "a") as f:
+						subprocess.Popen(cmd, shell=True, stdout=f)
+						try:
+							patience = os.waitpid(-1, 0)
+						except OSError, err:
+							com[self.name] = "ended"
+				else:
+					subprocess.Popen(cmd, shell=True)
+					patience = os.waitpid(-1, 0)
 				verif = patience[1]
 				if int(verif) != int(self.expected):
 				 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
-				print "finish {}".format(self.name)
 			com[self.name] = "ended"
 
 	def	redirect(self):
@@ -200,11 +176,7 @@ class Program(object):
 			self.fd_out = sys.stdout = open(self.discard_out, 'w')
 
 	def __init__(self, process_name, conf):
-		where = "start"
-		# for category in conf:
-			# if i == nb:
-				# where.append(category)
-		# print where
+		where = "programs"
 		self.file = conf
 		self.name = process_name
 		self.pid = self.get_pid()
@@ -233,7 +205,8 @@ class Program(object):
 		self.options = self.get_options(where)
 		self.sstarted = self.get_timer()
 		progs[self.name] = self
-		self.launch()
+		if self.boot == True:
+			self.launch()
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -321,16 +294,12 @@ def get_conf():														#return the configuration
 def start_progs():													#launch the prog on start
 	global	progs
 	progs = {}
-	for category in conf:
-		print category
-		for smthing in conf[category]:
-			print " "
-			for prog in conf[category][smthing]:
-				print prog
-				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
-				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-				com[prog[prog.keys()[0]][0]['name']] = "starting"
-				mythread.start()
+	for smthing in conf:
+		for prog in conf[smthing]:
+			#progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
+			mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+			com[prog[prog.keys()[0]][0]['name']] = "starting"
+			mythread.start()
 
 def init():															#init
 	global	conf

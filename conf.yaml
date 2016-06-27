@@ -1,72 +1,72 @@
-start:
-    programs:
-        - ls:
-            - name: ls
-            - nb: 1
-            - options: -la
-            - boot: True
-            - restart: True
-            - expected: 0
-            - timeout: 5
-            - restarttry: 1
-            - stopsignal: 15
-            - timeperiod: 30
-            - discard_err: ~/error.txt
-            - discard_out: ~/redirect.txt
-            - env: Null
-            - wd: Null
-            - umask: Null
-        # - pwd:
-        #     - name: pwd
-        #     - nb: 1
-        #     - options: null
-        #     - boot: True
-        #     - restart: True
-        #     - expected: 0
-        #     - timeout: 30
-        #     - restarttry: 1
-        #     - stopsignal: 15
-        #     - timeperiod: 0
-        #     - discard_err: ~/error.txt
-        #     - discard_out: Null
-        #     - env:
-        #         - HOME: /nfs/2014/v/vdaviot
-        #         - PATH: /nfs/2014/v/vdaviot/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/munki
-        #         - PWD: /nfs/2014/v/vdaviot/
-        #     - wd: Null
-        #     - umask: Null
-nope:
-    programs:
-        - pwd:
-            - name: pwd
-            - nb: 1
-            - options: -L
-            - boot: True
-            - restart: True
-            - expected: 0
-            - timeout: 5
-            - restarttry: 1
-            - stopsignal: 15
-            - timeperiod: 30
-            - discard_err: ~/error.txt
-            - discard_out: Null
-            - env: Null
-            - wd: Null
-            - umask: Null
-        # - sleep:
-        #     - name: sleep
-        #     - nb: 1
-        #     - options: !!str 5
-        #     - boot: True
-        #     - restart: True
-        #     - expected: 0
-        #     - timeout: 3
-        #     - restarttry: 1
-        #     - stopsignal: 15
-        #     - timeperiod: 30
-        #     - discard: Null
-        #     - discard_err: ~/error.txt
-        #     - discard_out: ~/redirect.txt
-        #     - env: Null
-        #     - wd: ~/
-        #     - umask: Null
+programs:
+    - ls:
+        - name: ls
+        - nb: 1
+        - options: -la
+        - boot: True
+        - restart: True
+        - expected: 0
+        - timeout: 5
+        - restarttry: 1
+        - stopsignal: 15
+        - timeperiod: 30
+        - discard_err: ~/error.txt
+        - discard_out: ~/redirect.txt
+        - env: Null
+        - wd: Null
+        - umask: Null
+
+    - pwd:
+        - name: pwd
+        - nb: 1
+        - options: null
+        - boot: True
+        - restart: True
+        - expected: 0
+        - timeout: 30
+        - restarttry: 1
+        - stopsignal: 15
+        - timeperiod: 0
+        - discard_err: ~/error.txt
+        - discard_out: Null
+        - env:
+            - HOME: /nfs/2014/v/vdaviot
+            - PATH: /nfs/2014/v/vdaviot/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/munki
+            - PWD: /nfs/2014/v/vdaviot/
+        - wd: Null
+        - umask: Null
+
+    - pwd:
+        - name: pwd
+        - nb: 1
+        - options: -L
+        - boot: True
+        - restart: True
+        - expected: 0
+        - timeout: 5
+        - restarttry: 1
+        - stopsignal: 15
+        - timeperiod: 30
+        - discard_err: ~/error.txt
+        - discard_out: Null
+        - env: Null
+        - wd: Null
+        - umask: Null
+
+    - sleep:
+        - name: sleep
+        - nb: 1
+        - options: !!str 5
+        - boot: True
+        - restart: True
+        - expected: 0
+        - timeout: 3
+        - restarttry: 1
+        - stopsignal: 15
+        - timeperiod: 30
+        - discard: Null
+        - discard_err: ~/error.txt
+        - discard_out: Null
+        - env: Null
+        - wd: ~/
+        - umask: Null
