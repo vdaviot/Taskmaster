@@ -7,9 +7,25 @@ from subprocess import check_output, Popen
 global com
 global stream
 global thread_count
+global path
 thread_count = None
 thread_count = 0
 com = {}
+path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
+
+def Timer(process_name, restart):
+	if process_name in com:
+		com[process_name] == "dying"
+		print "progs[process_name] == {}".format(progs[process_name])
+		progs[process_name].suicide()
+		t = time.time()
+		while (progs[process_name].get_pid()):
+			if time.time() >= t + progs[process_name].timeout:
+				progs[process_name].prog.get_kill()
+		com[process_name] = "dead"
+		if restart == 1:
+			start_proc(process_name)
+		return
 
 def signal_handler(signal, frame):
         print "You pressed {}.".format(signal)
@@ -17,27 +33,9 @@ def signal_handler(signal, frame):
         sys.exit(0)
 
 class MyThread(threading.Thread):
-	# def prog_handler(self):
-	# 	while (True):
-	# 		if com[self.name] == "DIE!!!":
-	# 			com[self.name] == "dying"
-	# 			self.prog.suicide()
-	# 			t = time.time()
-	# 			while (self.prog.get_pid()):
-	# 				if time.time() >= t + self.timeout:
-	# 					self.prog.get_kill()
-	# 			com[self.name] = "dead"
-	# 			return
-	# 		elif com[self.name] == "STOP":
-	# 			self.prog.get_kill()
-	# 			com[self.name] = "dead"
-	# 			return
-
 	def run(self):
 		self.prog = Program(self.name, conf)
 		return
-		#self.prog_handler()
-
 
 
 class Program(object):
@@ -56,7 +54,7 @@ class Program(object):
 				print "Process " + self.name + " ended."
 
 	def get_in_conf(self, arg, name, info):
-		for prog in conf[arg]['programs']:
+		for prog in conf[arg]:
 			if prog.get(name):
 				i = 0
 				while prog[prog.keys()[0]][i]:
@@ -83,12 +81,9 @@ class Program(object):
 		return 'DEAD'
 
 	def	get_env(self, arg):
-		# env = self.get_in_conf(arg, self.name, "env")
-		# if env == None or False:
-			# return None
-		# else:
-			# return env
-		return self.get_in_conf(arg, self.name, "env")
+		env = {}
+		env = self.get_in_conf(arg, self.name, "env")
+		return env
 
 	def	get_old_env(self):
 		return os.environ
@@ -162,6 +157,10 @@ class Program(object):
 		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
 		print "		- Working directory set to {}.".format(self.wd)
 		print "		- Umask variable is set to {}.".format(self.umask)
+		if self.new_env != None:
+			print "		- New env specified: "
+			for p in self.new_env:
+				print "			- {}.".format(p)
 		if self.sstarted == True:
 			print "		- Program {} successfuly started.".format(self.name)
 		else:
@@ -169,28 +168,45 @@ class Program(object):
 		print " "
 		print "----------------------------------------------"
 
-	def	launch(self):
-		if self.boot == True:
-			i = self.number
-			while i > 0:
-				cmd = self.name
-				if self.options != None:
-					cmd = cmd + " " + self.options
-				#if self.discard_out == False:
-				#	p = subprocess.Popen(cmd, shell=True)
-				#elif self.discard_out:
+	def	status_light(self):
+		print " - {} program {}"
+
+	def	launch(self, cmd):
+		i = self.number
+		while i > 0:
+			if self.discard_out != None and self.discard_err != None:
+				with open(self.discard_out, "a") as f:
+					with open(self.discard_err, "a") as e:
+						subprocess.Popen(cmd, shell=True, stdout=f, stderr=e)
+						try:
+							patience = os.waitpid(-1, 0)
+						except OSError, err:
+							com[self.name] = "ended"
+			elif self.discard_err != None and self.discard_out == None: # <- c chelou t elifs non ?
+				with open(self.discard_err, "a") as e:
+					subprocess.Popen(cmd, shell=True, stderr=e)
+					try:
+						patience = os.waitpid(-1, 0)
+					except OSError, err:
+						com[self.name] = "ended"
+			elif self.discard_out != None and self.discard_err == None: # <- et la
 				with open(self.discard_out, "a") as f:
 					subprocess.Popen(cmd, shell=True, stdout=f)
 					try:
 						patience = os.waitpid(-1, 0)
 					except OSError, err:
 						com[self.name] = "ended"
-				verif = patience[1]
-				if int(verif) != int(self.expected):
-				 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
-				i  = i - 1
-				print "finish {}".format(self.name)
-			com[self.name] = "ended"
+			else:
+				subprocess.Popen(cmd, shell=True)
+				try:
+					patience = os.waitpid(-1, 0)
+				except OSError, err:
+					com[self.name] = "ended"
+			verif = patience[1]
+			if int(verif) != int(self.expected):
+			 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
+			i  = i - 1
+		com[self.name] = "ended"
 
 	def	redirect(self):
 		if self.discard_err != None:
@@ -199,11 +215,7 @@ class Program(object):
 			self.fd_out = sys.stdout = open(self.discard_out, 'w')
 
 	def __init__(self, process_name, conf):
-		where = "start"
-		# for category in conf:
-			# if i == nb:
-				# where.append(category)
-		# print where
+		where = "programs"
 		self.file = conf
 		self.name = process_name
 		self.pid = self.get_pid()
@@ -227,12 +239,36 @@ class Program(object):
 		self.umask = self.get_umask(where)
 		if self.umask != None:
 			self.old_umask = os.umask(self.umask)
-		self.old_env = self.get_old_env()
 		self.new_env = self.get_env(where)
+		if self.new_env != None:
+			self.old_env = self.get_old_env()
 		self.options = self.get_options(where)
 		self.sstarted = self.get_timer()
 		progs[self.name] = self
-		self.launch()
+		self.cmd = ""
+		if self.new_env != None:
+			for cmd in self.new_env:
+				pouet = cmd.keys()[0]
+				self.cmd += pouet + "=" + cmd.get(pouet) + " "
+		if self.options != None:
+			self.cmd += self.name + " " + self.options
+		else:
+			self.cmd += self.name
+		print self.cmd
+		if self.boot == True:
+			self.launch(self.cmd)
+
+def start_proc(process_name):
+	global	progs
+	progs = {}
+	for category in conf:
+		print category
+		for smthing in conf[category]:
+			for prog in conf[category][smthing]:
+				if process_name == prog[prog.keys()[0]][0]['name']:
+					mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+					com[prog[prog.keys()[0]][0]['name']] = "starting"
+					mythread.start()
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -243,7 +279,7 @@ class	Microshell(cmd.Cmd):
 		prompt = "Anonymous@42>"
 	file = None
 
-	def	do_status(self, name): # a modifier par la suite
+	def	do_status(self, name):
 		'Give you the status of each programs described in the configuration file.'
 		if name != "":
 			for p in progs:
@@ -268,22 +304,12 @@ class	Microshell(cmd.Cmd):
 
 
 	def	do_start(self, process_name):
-		global	progs
-		progs = {}
-		for category in conf:
-			print category
-			for smthing in conf[category]:
-				for prog in conf[category][smthing]:
-					if process_name == prog[prog.keys()[0]][0]['name']:
-						mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-						com[prog[prog.keys()[0]][0]['name']] = "starting"
-						mythread.start()
+		start_proc(process_name)
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
 		if process_name in com:
 			com[process_name] == "dying"
-			print progs
 			print "progs[process_name] == {}".format(progs[process_name])
 			progs[process_name].suicide()
 			t = time.time()
@@ -303,7 +329,6 @@ class	Microshell(cmd.Cmd):
 			self.file = None
 
 def stop_process():
-	print com.items()
 	for i, j in com.items():
 		com[i] = "STOP"
 	while True:
@@ -323,7 +348,7 @@ def finish():														#end
 
 
 def get_conf():														#return the configuration
-	stream = open("conf.yaml", 'r')
+	stream = open(path, 'r')
 	try:
 		return yaml.load(stream)
 	except yaml.YAMLError as exc:
@@ -334,16 +359,11 @@ def get_conf():														#return the configuration
 def start_progs():													#launch the prog on start
 	global	progs
 	progs = {}
-	for category in conf:
-		print category
-		for smthing in conf[category]:
-			print " "
-			for prog in conf[category][smthing]:
-				print prog
-				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
-				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-				com[prog[prog.keys()[0]][0]['name']] = "starting"
-				mythread.start()
+	for smthing in conf:
+		for prog in conf[smthing]:
+			mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+			com[prog[prog.keys()[0]][0]['name']] = "starting"
+			mythread.start()
 
 def init():															#init
 	global	conf
