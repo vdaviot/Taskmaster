@@ -14,26 +14,28 @@ def signal_handler(signal, frame):
         sys.exit(0)
 
 class MyThread(threading.Thread):
-	def prog_handler(self):
-		while (True):
-			if com[self.name] == "DIE!!!":
-				com[self.name] == "dying"
-				self.prog.suicide()
-				t = time.time()
-				while (self.prog.get_pid()):
-					if time.time() >= t + self.timeout:
-						self.prog.get_kill()
-				com[self.name] = "dead"
-				return
-			elif com[self.name] == "STOP":
-				self.prog.get_kill()
-				com[self.name] = "dead"
-				return
+	# def prog_handler(self):
+	# 	while (True):
+	# 		if com[self.name] == "DIE!!!":
+	# 			com[self.name] == "dying"
+	# 			self.prog.suicide()
+	# 			t = time.time()
+	# 			while (self.prog.get_pid()):
+	# 				if time.time() >= t + self.timeout:
+	# 					self.prog.get_kill()
+	# 			com[self.name] = "dead"
+	# 			return
+	# 		elif com[self.name] == "STOP":
+	# 			self.prog.get_kill()
+	# 			com[self.name] = "dead"
+	# 			return
 
 	def run(self):
 		print("started!")	   # affiche "Thread-x started!"
 		self.prog = Program(self.name, conf)
-		self.prog_handler()
+		progs[self.name] = self.prog
+		return
+		#self.prog_handler()
 
 
 
@@ -48,6 +50,7 @@ class Program(object):
 		sign = self.get_stop_signal("start")
 		for pid in self.get_pid().split():
 			if pid != None:
+				print "pid = {}".format(pid)
 				os.kill(int(pid), sign)
 				print "Process " + self.name + " ended."
 
@@ -136,7 +139,9 @@ class Program(object):
 	def gstatus(self):
 		print "----------------------------------------------"
 		print " "
+		print "progs = {}".format(progs)
 		print "Program {} settings/status:".format(self.name)
+		print "		- etat = {}".format(com[self.name])
 		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
 		print "		- Program {} is {}.".format(self.name, self.status)
 		print "		- {} instance of {} program needed.".format(self.number, self.name)
@@ -165,15 +170,21 @@ class Program(object):
 				cmd = self.name
 				if self.options != None:
 					cmd = cmd + " " + self.options
-				if self.discard_out == False:
-					p = subprocess.Popen(cmd, shell=True)
-				elif self.discard_out:
-					with open(self.discard_out, "wa") as f:
-						p = subprocess.Popen(cmd, shell=True, stdout=f)
-				verif = os.popen("echo $?").read()
+				#if self.discard_out == False:
+				#	p = subprocess.Popen(cmd, shell=True)
+				#elif self.discard_out:
+				with open(self.discard_out, "wa") as f:
+					subprocess.Popen(cmd, shell=True, stdout=f)
+					try:
+						patience = os.waitpid(-1, 0)
+					except OSError, err:
+						com[self.name] = "ended"
+					print "patience == {}".format(patience[1])
+				verif = patience[1]
 				if int(verif) != int(self.expected):
-					print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
+				 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
+			print progs
 
 	def	redirect(self):
 		if self.discard_err != False or None:
@@ -210,8 +221,11 @@ class Program(object):
 		self.options = self.get_options(start)
 		self.sstarted = self.get_timer()
 		self.launch()
-		p = os.waitpid(-1, os.WNOHANG)
-		com[self.name] = "chill"
+		# try:
+		# 	os.waitpid(-1, os.WNOHANG)
+		# except OSError, err:
+		# 	print "OUT!!! {}".format(err)
+		#com[self.name] = "chill"
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -220,7 +234,7 @@ class	Microshell(cmd.Cmd):
 		user = os.environ["USER"] + "@student.42.fr"
 	else:
 		prompt = "Anonymous@42>"
-	file = None	
+	file = None
 
 	def	do_status(self, name): # a modifier par la suite
 		'Give you the status of each programs described in the configuration file.'
@@ -230,8 +244,9 @@ class	Microshell(cmd.Cmd):
 					p.gstatus()
 					break
 		else:
-			for p in progs:
-				p.gstatus()
+			for p, a in progs.items():
+				#print "p = {}, a = {}".format(p, a)
+				a.gstatus()
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
@@ -256,15 +271,21 @@ class	Microshell(cmd.Cmd):
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
 		if process_name in com:
-			if (com[process_name] == "chill"):
-				com[process_name] = "DIE!!!"
-				print "Process {} killed.".format(process_name)
-			elif (com[process_name == "dead"]):
-				print "{} is not running.".format(process_name)
-			else:
-				print "{} is busy".format(process_name)
-		else:
-			print "{} is not in prog list".format(process_name)
+			com[process_name] == "dying"
+			progs[process_name].suicide()
+			t = time.time()
+			while (progs[process_name].prog.get_pid()):
+				if time.time() >= t + progs[process_name].timeout:
+					progs[process_name].prog.get_kill()
+			com[self.name] = "dead"
+			return
+				#print "Process {} killed.".format(process_name)
+		# 	elif (com[process_name == "dead"]):
+		# 		print "{} is not running.".format(process_name)
+		# 	else:
+		# 		print "{} is busy".format(process_name)
+		# else:
+		# 	print "{} is not in prog list".format(process_name)
 
 	def close(self):
 		if self.file:
@@ -307,14 +328,15 @@ def get_conf():														#return the configuration
 
 def start_progs():													#launch the prog on start
 	global	progs
-	progs = []
+	progs = {}
 	if 'start' in conf:
 		if 'programs' in conf['start']:
 			for prog in conf['start']['programs']:
-				progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
+				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
 				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
 				com[prog[prog.keys()[0]][0]['name']] = "starting"
 				mythread.start()
+				print "bijour"
 
 def init():															#init
 	global	conf
