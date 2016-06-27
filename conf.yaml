@@ -1,21 +1,21 @@
 start:
     programs:
-        - ls:
-            - name: ls
-            - nb: 1
-            - options: -la
-            - boot: True
-            - restart: True
-            - expected: 0
-            - timeout: 5
-            - restarttry: 1
-            - stopsignal: 15
-            - timeperiod: 30
-            - discard_err: ~/error.txt
-            - discard_out: ~/redirect.txt
-            - env: False
-            - wd: False
-            - umask: False
+        # - ls:
+        #     - name: ls
+        #     - nb: 1
+        #     - options: -la
+        #     - boot: True
+        #     - restart: True
+        #     - expected: 0
+        #     - timeout: 5
+        #     - restarttry: 1
+        #     - stopsignal: 15
+        #     - timeperiod: 30
+        #     - discard_err: ~/error.txt
+        #     - discard_out: ~/redirect.txt
+        #     - env: False
+        #     - wd: False
+        #     - umask: False
         # - pwd:
         #     - name: pwd
         #     - nb: 1
@@ -35,20 +35,20 @@ start:
         #         - PWD: /nfs/2014/v/vdaviot/
         #     - wd: False
         #     - umask: False
-        # - sleep:
-        #     - name: sleep
-        #     - nb: 1
-        #     - options: !!str 5
-        #     - boot: True
-        #     - restart: True
-        #     - expected: 0
-        #     - timeout: 3
-        #     - restarttry: 1
-        #     - stopsignal: 15
-        #     - timeperiod: 30
-        #     - discard: False
-        #     - discard_err: ~/error.txt
-        #     - discard_out: ~/redirect.txt
-        #     - env: False
-        #     - wd: ~/
-        #     - umask: False
+        - sleep:
+            - name: sleep
+            - nb: 1
+            - options: !!str 5
+            - boot: True
+            - restart: True
+            - expected: 0
+            - timeout: 3
+            - restarttry: 1
+            - stopsignal: 15
+            - timeperiod: 30
+            - discard: False
+            - discard_err: ~/error.txt
+            - discard_out: ~/redirect.txt
+            - env: False
+            - wd: ~/
+            - umask: False
