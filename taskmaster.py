@@ -33,7 +33,6 @@ class MyThread(threading.Thread):
 	def run(self):
 		print("started!")	   # affiche "Thread-x started!"
 		self.prog = Program(self.name, conf)
-		progs[self.name] = self.prog
 		return
 		#self.prog_handler()
 
@@ -184,7 +183,8 @@ class Program(object):
 				if int(verif) != int(self.expected):
 				 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
-			print progs
+				print "finish {}".format(self.name)
+			com[self.name] = "ended"
 
 	def	redirect(self):
 		if self.discard_err != False or None:
@@ -220,6 +220,7 @@ class Program(object):
 		self.new_env = self.get_env(start)
 		self.options = self.get_options(start)
 		self.sstarted = self.get_timer()
+		progs[self.name] = self
 		self.launch()
 
 class	Microshell(cmd.Cmd):
@@ -266,12 +267,14 @@ class	Microshell(cmd.Cmd):
 		'Kill a process by his PID or name.'
 		if process_name in com:
 			com[process_name] == "dying"
+			print progs
+			print "progs[process_name] == {}".format(progs[process_name])
 			progs[process_name].suicide()
 			t = time.time()
-			while (progs[process_name].prog.get_pid()):
+			while (progs[process_name].get_pid()):
 				if time.time() >= t + progs[process_name].timeout:
 					progs[process_name].prog.get_kill()
-			com[self.name] = "dead"
+			com[process_name] = "dead"
 			return
 				#print "Process {} killed.".format(process_name)
 		# 	elif (com[process_name == "dead"]):
