@@ -31,12 +31,12 @@ Todo:
 
 		- Which signal should be used to stop (i.e. exit gracefully) the program : √
 
-		- How long to wait after a graceful stop before killing the program
+		- How long to wait after a graceful stop before killing the program TODO™
 
 		- Options to discard the program’s stdout/stderr or to redirect them to files : √
 
-		- Environment variables to set before launching the program 
+		- Environment variables to set before launching the program TODO™
 
-		- A working directory to set before launching the program
+		- A working directory to set before launching the program : √
 
-		- An umask to set before launching the program
+		- An umask to set before launching the program : √
