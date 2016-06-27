@@ -13,9 +13,9 @@ start:
             - timeperiod: 30
             - discard_err: ~/error.txt
             - discard_out: ~/redirect.txt
-            - env: False
-            - wd: False
-            - umask: False
+            - env: Null
+            - wd: Null
+            - umask: Null
         # - pwd:
         #     - name: pwd
         #     - nb: 1
@@ -28,13 +28,31 @@ start:
         #     - stopsignal: 15
         #     - timeperiod: 0
         #     - discard_err: ~/error.txt
-        #     - discard_out: False
+        #     - discard_out: Null
         #     - env:
         #         - HOME: /nfs/2014/v/vdaviot
         #         - PATH: /nfs/2014/v/vdaviot/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/munki
         #         - PWD: /nfs/2014/v/vdaviot/
-        #     - wd: False
-        #     - umask: False
+        #     - wd: Null
+        #     - umask: Null
+nope:
+    programs:
+        - pwd:
+            - name: pwd
+            - nb: 1
+            - options: -L
+            - boot: True
+            - restart: True
+            - expected: 0
+            - timeout: 5
+            - restarttry: 1
+            - stopsignal: 15
+            - timeperiod: 30
+            - discard_err: ~/error.txt
+            - discard_out: Null
+            - env: Null
+            - wd: Null
+            - umask: Null
         # - sleep:
         #     - name: sleep
         #     - nb: 1
@@ -46,9 +64,9 @@ start:
         #     - restarttry: 1
         #     - stopsignal: 15
         #     - timeperiod: 30
-        #     - discard: False
+        #     - discard: Null
         #     - discard_err: ~/error.txt
         #     - discard_out: ~/redirect.txt
-        #     - env: False
+        #     - env: Null
         #     - wd: ~/
-        #     - umask: False
+        #     - umask: Null

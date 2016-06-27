@@ -6,6 +6,9 @@ from subprocess import check_output, Popen
 
 global com
 global stream
+global thread_count
+thread_count = None
+thread_count = 0
 com = {}
 
 def signal_handler(signal, frame):
@@ -31,8 +34,9 @@ class MyThread(threading.Thread):
 	# 			return
 
 	def run(self):
-		print("started!")	   # affiche "Thread-x started!"
 		self.prog = Program(self.name, conf)
+		
+		# print("started!")	   		# affiche "Thread-x started!"
 		progs[self.name] = self.prog
 		return
 		#self.prog_handler()
@@ -82,6 +86,11 @@ class Program(object):
 		return 'DEAD'
 
 	def	get_env(self, arg):
+		# env = self.get_in_conf(arg, self.name, "env")
+		# if env == None or False:
+			# return None
+		# else:
+			# return env
 		return self.get_in_conf(arg, self.name, "env")
 
 	def	get_old_env(self):
@@ -127,21 +136,21 @@ class Program(object):
 
 	def	get_wd(self, arg):
 		last = self.get_in_conf(arg, self.name, "wd")
-		if last != False:
+		if last != None:
 			if last[0] == "~":
 				return os.environ["HOME"] + last.replace(last[:1], '')
 		return last
 
 	def	get_umask(self, arg):
 		var = self.get_in_conf(arg, self.name, "umask")
-		return os.umask(var)
+		return var
 
 	def gstatus(self):
 		print "----------------------------------------------"
 		print " "
 		print "progs = {}".format(progs)
 		print "Program {} settings/status:".format(self.name)
-		print "		- etat = {}".format(com[self.name])
+		print "		- Program state = {}".format(com[self.name])
 		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
 		print "		- Program {} is {}.".format(self.name, self.status)
 		print "		- {} instance of {} program needed.".format(self.number, self.name)
@@ -179,47 +188,53 @@ class Program(object):
 						patience = os.waitpid(-1, 0)
 					except OSError, err:
 						com[self.name] = "ended"
-					print "patience == {}".format(patience[1])
+					# print "patience == {}".format(patience[1])
 				verif = patience[1]
 				if int(verif) != int(self.expected):
 				 	print "{} returned an error, expected {} got {}.".format(self.name, self.expected, verif)
 				i  = i - 1
-			print progs
+			# print progs
 
 	def	redirect(self):
-		if self.discard_err != False or None:
+		if self.discard_err != None:
 			self.fd_err = sys.stderr = open(self.discard_err, 'w')
-		if self.discard_out != False or None:
+		if self.discard_out != None:
 			self.fd_out = sys.stdout = open(self.discard_out, 'w')
 
 	def __init__(self, process_name, conf):
-		start = "start"
+		where = "start"
+		# for category in conf:
+			# if i == nb:
+				# where.append(category)
+		# print where
 		self.file = conf
 		self.name = process_name
 		self.pid = self.get_pid()
 		self.status = self.get_status()
-		self.number = self.get_nb(start)
-		self.boot = self.get_boot(start)
-		self.restart = self.get_restart(start)
-		self.expected = self.get_expected(start)
-		self.timeout = self.get_timeout(start)
-		self.nb_restart = self.get_nb_restart(start)
-		self.stop_signal = self.get_stop_signal(start)
-		self.time_period = self.get_time_period(start)
-		self.discard_err = self.get_program_discard_err(start)
-		self.discard_out = self.get_program_discard_out(start)
-		self.wd = self.get_wd(start)
-		if self.wd != False:
+		self.number = self.get_nb(where)
+		self.boot = self.get_boot(where)
+		self.restart = self.get_restart(where)
+		self.expected = self.get_expected(where)
+		self.timeout = self.get_timeout(where)
+		self.nb_restart = self.get_nb_restart(where)
+		self.stop_signal = self.get_stop_signal(where)
+		self.time_period = self.get_time_period(where)
+		self.discard_err = self.get_program_discard_err(where)
+		self.discard_out = self.get_program_discard_out(where)
+		self.wd = self.get_wd(where)
+		if self.wd != None:
 			try:
 				os.chdir(self.wd)
 			except OSError:
 				print "{} directory does not exist.".format(self.wd)
-		self.umask = self.get_umask(start)
-		self.old_umask = os.umask(self.umask)
+		self.umask = self.get_umask(where)
+		if self.umask != None:
+			self.old_umask = os.umask(self.umask)
 		self.old_env = self.get_old_env()
-		self.new_env = self.get_env(start)
-		self.options = self.get_options(start)
+		self.new_env = self.get_env(where)
+		self.options = self.get_options(where)
 		self.sstarted = self.get_timer()
+		progs[self.name] = self
 		self.launch()
 
 class	Microshell(cmd.Cmd):
@@ -244,11 +259,6 @@ class	Microshell(cmd.Cmd):
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
-		# for p in progs:
-			# os.umask(p.old_umask)
-			# del p
-		# conf = None
-		# stream.close()
 		conf = get_conf()
 		start_progs()
 
@@ -273,13 +283,6 @@ class	Microshell(cmd.Cmd):
 					progs[process_name].prog.get_kill()
 			com[self.name] = "dead"
 			return
-				#print "Process {} killed.".format(process_name)
-		# 	elif (com[process_name == "dead"]):
-		# 		print "{} is not running.".format(process_name)
-		# 	else:
-		# 		print "{} is busy".format(process_name)
-		# else:
-		# 	print "{} is not in prog list".format(process_name)
 
 	def close(self):
 		if self.file:
@@ -318,14 +321,16 @@ def get_conf():														#return the configuration
 def start_progs():													#launch the prog on start
 	global	progs
 	progs = {}
-	if 'start' in conf:
-		if 'programs' in conf['start']:
-			for prog in conf['start']['programs']:
+	for category in conf:
+		print category
+		for smthing in conf[category]:
+			print " "
+			for prog in conf[category][smthing]:
+				print prog
 				#progs = [Program(prog[prog.keys()[0]][0]['name'], conf) for prog in conf['start']['programs']]
 				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
 				com[prog[prog.keys()[0]][0]['name']] = "starting"
 				mythread.start()
-				print "bijour"
 
 def init():															#init
 	global	conf
