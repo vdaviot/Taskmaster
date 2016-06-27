@@ -221,11 +221,6 @@ class Program(object):
 		self.options = self.get_options(start)
 		self.sstarted = self.get_timer()
 		self.launch()
-		# try:
-		# 	os.waitpid(-1, os.WNOHANG)
-		# except OSError, err:
-		# 	print "OUT!!! {}".format(err)
-		#com[self.name] = "chill"
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -245,7 +240,6 @@ class	Microshell(cmd.Cmd):
 					break
 		else:
 			for p, a in progs.items():
-				#print "p = {}, a = {}".format(p, a)
 				a.gstatus()
 
 	def do_reload(self, file):
@@ -319,12 +313,7 @@ def get_conf():														#return the configuration
 	except yaml.YAMLError as exc:
 		print exc
 		return None
-	# with open("conf.yaml", 'r') as stream:
-		# try:
-			# return yaml.load(stream)
-		# except yaml.YAMLError as exc:
-			# print(exc)
-			# return None
+
 
 def start_progs():													#launch the prog on start
 	global	progs
