@@ -8,19 +8,18 @@ programs:
         - expected: 0
         - timeout: 5
         - restarttry: 1
-        - stopsignal: 15
+        - stopsignal: 2
         - timeperiod: 30
         - discard_err: ~/error.txt
         - discard_out: ~/redirect.txt
         - env: Null
         - wd: ~/
         - umask: Null
-
     - pwd:
         - name: pwd
         - nb: 1
         - options: null
-        - boot: True
+        - boot: False
         - restart: True
         - expected: 0
         - timeout: 30
@@ -35,38 +34,20 @@ programs:
             - PWD: /nfs/2014/v/vdaviot/Work/taskmaster
         - wd: Null
         - umask: Null
-        
-    - pwd:
-        - name: pwd
+    - sleep:
+        - name: sleep
         - nb: 1
-        - options: -L
+        - options: !!str 10
         - boot: True
         - restart: True
         - expected: 0
-        - timeout: 5
+        - timeout: 3
         - restarttry: 1
         - stopsignal: 15
         - timeperiod: 30
+        - discard: Null
         - discard_err: ~/error.txt
         - discard_out: Null
         - env: Null
         - wd: Null
         - umask: Null
-
-    # - sleep:
-    #     - name: sleep
-    #     - nb: 1
-    #     - options: !!str 5
-    #     - boot: True
-    #     - restart: True
-    #     - expected: 0
-    #     - timeout: 3
-    #     - restarttry: 1
-    #     - stopsignal: 15
-    #     - timeperiod: 30
-    #     - discard: Null
-    #     - discard_err: ~/error.txt
-    #     - discard_out: Null
-    #     - env: Null
-    #     - wd: Null
-    #     - umask: Null

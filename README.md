@@ -5,9 +5,9 @@ Todo:
 
 	shell:
 
-		- See the status of all the programs described in the config file ("status" command)
+		- See the status of all the programs described in the config file ("status" command) : √
 
-		- Start / stop / restart programs
+		- Start / stop / restart programs : √
 
 		- Reload the configuration file without stopping the main program : √
 
