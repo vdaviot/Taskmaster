@@ -41,6 +41,7 @@ class MyThread(threading.Thread):
 
 	def run(self):
 		obj = self.choose()
+		tryit = obj.restarttry
 		if obj == None:
 			return
 		i = obj.number
@@ -76,6 +77,9 @@ class MyThread(threading.Thread):
 			verif = patience[1]
 			if int(verif) != int(obj.expected):
 			 	print "{} returned an error, expected {} got {}.".format(obj.name, obj.expected, verif)
+			 	if tryit > 0:
+			 		tryit -= 1
+			 		continue
 			i  = i - 1
 		com[obj.name] = "ended"
 		return
@@ -98,7 +102,6 @@ class Program(object):
 		sign = self.get_stop_signal("programs")
 		for pid in self.get_pid().split():
 			if pid != None:
-				# print "pid = {}".format(pid)
 				try:
 					os.kill(int(pid), sign)
 					print "Process " + self.name + " ended."
@@ -219,16 +222,6 @@ class Program(object):
 		print " "
 		print "----------------------------------------------"
 
-	def	status_light(self):
-		print " - {} program {}"
-
-
-	def	redirect(self):
-		if self.discard_err != None:
-			self.fd_err = sys.stderr = open(self.discard_err, 'w')
-		if self.discard_out != None:
-			self.fd_out = sys.stdout = open(self.discard_out, 'w')
-
 	def __init__(self, process_name, conf):
 		where = "programs"
 		self.file = conf
@@ -269,8 +262,6 @@ class Program(object):
 			self.cmd += self.name + " " + self.options
 		else:
 			self.cmd += self.name
-		# if self.boot == True:
-			# self.launch(self.cmd)
 
 
 class	Microshell(cmd.Cmd):
@@ -316,12 +307,6 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		kill(process_name)
-		
-
-	def do_close(self):
-		if self.file:
-			self.file.close()
-			self.file = None
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'

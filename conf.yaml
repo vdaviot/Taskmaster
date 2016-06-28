@@ -4,7 +4,7 @@ programs:
         - nb: 1
         - options: -la
         - boot: True
-        - restart: True
+        - restart: 0
         - expected: 0
         - timeout: 5
         - restarttry: 1
@@ -27,7 +27,7 @@ programs:
         - stopsignal: 15
         - timeperiod: 0
         - discard_err: ~/error.txt
-        - discard_out: Null
+        - discard_out: ~/redirect.txt
         - env:
             - HOME: /nfs/2014/v/vdaviot
             - PATH: /nfs/2014/v/vdaviot/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/munki
@@ -39,7 +39,7 @@ programs:
         - nb: 1
         - options: !!str 10
         - boot: True
-        - restart: True
+        - restart: False
         - expected: 0
         - timeout: 3
         - restarttry: 1
