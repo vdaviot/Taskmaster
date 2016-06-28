@@ -53,20 +53,20 @@ programs:
         - wd: Null
         - umask: Null
 
-    - sleep:
-        - name: sleep
-        - nb: 1
-        - options: !!str 5
-        - boot: True
-        - restart: True
-        - expected: 0
-        - timeout: 3
-        - restarttry: 1
-        - stopsignal: 15
-        - timeperiod: 30
-        - discard: Null
-        - discard_err: ~/error.txt
-        - discard_out: Null
-        - env: Null
-        - wd: Null
-        - umask: Null
+    # - sleep:
+    #     - name: sleep
+    #     - nb: 1
+    #     - options: !!str 5
+    #     - boot: True
+    #     - restart: True
+    #     - expected: 0
+    #     - timeout: 3
+    #     - restarttry: 1
+    #     - stopsignal: 15
+    #     - timeperiod: 30
+    #     - discard: Null
+    #     - discard_err: ~/error.txt
+    #     - discard_out: Null
+    #     - env: Null
+    #     - wd: Null
+    #     - umask: Null

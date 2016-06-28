@@ -260,21 +260,9 @@ class Program(object):
 			self.cmd += self.name + " " + self.options
 		else:
 			self.cmd += self.name
-		print self.cmd
 		if self.boot == True:
 			self.launch(self.cmd)
 
-def start_proc(process_name):
-	global	progs
-	progs = {}
-	for category in conf:
-		print category
-		for smthing in conf[category]:
-			for prog in conf[category][smthing]:
-				if process_name == prog[prog.keys()[0]][0]['name']:
-					mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-					com[prog[prog.keys()[0]][0]['name']] = "starting"
-					mythread.start()
 
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
@@ -299,7 +287,7 @@ class	Microshell(cmd.Cmd):
 	def do_reload(self, file):
 		'Reload the configuration file.'
 		conf = get_conf()
-		start_progs()
+		start_progs(None)
 
 	def do_exit(self, arg):
 		'Exit the program.'
@@ -310,7 +298,7 @@ class	Microshell(cmd.Cmd):
 
 
 	def	do_start(self, process_name):
-		start_proc(process_name)
+		start_progs(process_name)
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
@@ -322,12 +310,9 @@ class	Microshell(cmd.Cmd):
 			while (progs[process_name].get_pid()):
 				if time.time() >= t + progs[process_name].timeout:
 					progs[process_name].get_kill()
+					break
 			com[process_name] = "dead"
 			return
-
-	def do_restart(self, process_name):
-		self.do_kill(process_name)
-		self.do_start(process_name)
 
 	def close(self):
 		if self.file:
@@ -367,20 +352,29 @@ def get_conf():														#return the configuration
 		return None
 
 
-def start_progs():													#launch the prog on start
+def start_progs(process_name):													#launch the prog on start
 	global	progs
 	progs = {}
-	for smthing in conf:
-		for prog in conf[smthing]:
-			mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-			com[prog[prog.keys()[0]][0]['name']] = "starting"
-			mythread.start()
+	if process_name == None:
+		for smthing in conf:
+			for prog in conf[smthing]:
+				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+				com[prog[prog.keys()[0]][0]['name']] = "starting"
+				mythread.start()
+	else:
+		for smthing in conf:
+			for prog in conf[smthing]:
+				meh = prog.keys()[0]
+				if meh == process_name:
+					mythread = MyThread(name = process_name)
+					com[prog[prog.keys()[0]][0]['name']] = "starting"
+					mythread.start()
 
 def init():															#init
 	global	conf
 	signal.signal(signal.SIGINT, signal_handler)
 	conf = get_conf()
-	start_progs()
+	start_progs(None)
 
 if __name__ == '__main__':											#main
 	init()
