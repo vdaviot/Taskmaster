@@ -28,16 +28,22 @@ class Program(object):
 	def get_kill(self):
 		for pid in self.get_pid().split():
 			if pid != None:
-				os.kill(int(pid), 11)
+				try:
+					os.kill(int(pid), 11)
+				except OSError, err:
+					print "Error \"{}\" occured when closing the {} program.".format(err, self.name)
 				print "Process " + self.name + " ended."
 
 	def suicide(self):
-		sign = self.get_stop_signal("start")
+		sign = self.get_stop_signal("programs")
 		for pid in self.get_pid().split():
 			if pid != None:
 				print "pid = {}".format(pid)
-				os.kill(int(pid), sign)
-				print "Process " + self.name + " ended."
+				try:
+					os.kill(int(pid), sign)
+					print "Process " + self.name + " ended."
+				except OSError, err:
+					print "Process {} ({}) not killed because of reason.".format(self.name, pid)
 
 	def get_in_conf(self, arg, name, info):
 		for prog in conf[arg]:
@@ -288,7 +294,7 @@ class	Microshell(cmd.Cmd):
 			t = time.time()
 			while (progs[process_name].get_pid()):
 				if time.time() >= t + progs[process_name].timeout:
-					progs[process_name].prog.get_kill()
+					progs[process_name].get_kill()
 			com[process_name] = "dead"
 			return
 
@@ -296,6 +302,11 @@ class	Microshell(cmd.Cmd):
 		if self.file:
 			self.file.close()
 			self.file = None
+
+	def	do_restart(self, process_name):
+		'Restart a program in the configuration file'
+		self.do_kill(process_name)
+		self.do_start(process_name)
 
 def stop_process():
 	for i, j in com.items():
