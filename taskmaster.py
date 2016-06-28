@@ -13,7 +13,7 @@ thread_count = 0
 com = {}
 path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 
-def Timer(process_name, restart):
+def Timer(process_name):
 	if process_name in com:
 		com[process_name] == "dying"
 		print "progs[process_name] == {}".format(progs[process_name])
@@ -23,8 +23,11 @@ def Timer(process_name, restart):
 			if time.time() >= t + progs[process_name].timeout:
 				progs[process_name].prog.get_kill()
 		com[process_name] = "dead"
-		if restart == 1:
-			start_proc(process_name)
+		return
+
+class Thread_kill(threading.Thread):
+	def run(self):
+		Timer(self.name)
 		return
 
 def signal_handler(signal, frame):
@@ -313,17 +316,8 @@ class	Microshell(cmd.Cmd):
 		start_proc(process_name)
 
 	def	do_kill(self, process_name):
-		'Kill a process by his PID or name.'
-		if process_name in com:
-			com[process_name] == "dying"
-			print "progs[process_name] == {}".format(progs[process_name])
-			progs[process_name].suicide()
-			t = time.time()
-			while (progs[process_name].get_pid()):
-				if time.time() >= t + progs[process_name].timeout:
-					progs[process_name].get_kill()
-			com[process_name] = "dead"
-			return
+		myThread = Thread_kill(name = process_name)
+		myThread.start()
 
 	def do_restart(self, process_name):
 		self.do_kill(process_name)
