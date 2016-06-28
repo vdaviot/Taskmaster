@@ -41,7 +41,7 @@ class MyThread(threading.Thread):
 
 	def run(self):
 		obj = self.choose()
-		tryit = obj.restarttry
+		tryit = obj.nb_restart
 		if obj == None:
 			return
 		i = obj.number
@@ -79,6 +79,10 @@ class MyThread(threading.Thread):
 			 	print "{} returned an error, expected {} got {}.".format(obj.name, obj.expected, verif)
 			 	if tryit > 0:
 			 		tryit -= 1
+			 		continue
+			 	elif tryit == 0:
+			 		break
+			 	elif tryit == -1:
 			 		continue
 			i  = i - 1
 		com[obj.name] = "ended"
@@ -230,7 +234,6 @@ class Program(object):
 		self.status = self.get_status()
 		self.number = self.get_nb(where)
 		self.boot = self.get_boot(where)
-		self.restart = self.get_restart(where)
 		self.expected = self.get_expected(where)
 		self.timeout = self.get_timeout(where)
 		self.nb_restart = self.get_nb_restart(where)
