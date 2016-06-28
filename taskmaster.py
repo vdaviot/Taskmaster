@@ -13,6 +13,20 @@ thread_count = 0
 com = {}
 path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 
+def Timer(process_name, restart):
+	if process_name in com:
+		com[process_name] == "dying"
+		print "progs[process_name] == {}".format(progs[process_name])
+		progs[process_name].suicide()
+		t = time.time()
+		while (progs[process_name].get_pid()):
+			if time.time() >= t + progs[process_name].timeout:
+				progs[process_name].prog.get_kill()
+		com[process_name] = "dead"
+		if restart == 1:
+			start_proc(process_name)
+		return
+
 def signal_handler(signal, frame):
         print "You pressed {}.".format(signal)
         stop_process()
@@ -174,14 +188,14 @@ class Program(object):
 							patience = os.waitpid(-1, 0)
 						except OSError, err:
 							com[self.name] = "ended"
-			elif self.discard_err != None and self.discard_out == None:
+			elif self.discard_err != None and self.discard_out == None: # <- c chelou t elifs non ?
 				with open(self.discard_err, "a") as e:
 					subprocess.Popen(cmd, shell=True, stderr=e)
 					try:
 						patience = os.waitpid(-1, 0)
 					except OSError, err:
 						com[self.name] = "ended"
-			elif self.discard_out != None and self.discard_err == None:
+			elif self.discard_out != None and self.discard_err == None: # <- et la
 				with open(self.discard_out, "a") as f:
 					subprocess.Popen(cmd, shell=True, stdout=f)
 					try:
@@ -250,6 +264,18 @@ class Program(object):
 		if self.boot == True:
 			self.launch(self.cmd)
 
+def start_proc(process_name):
+	global	progs
+	progs = {}
+	for category in conf:
+		print category
+		for smthing in conf[category]:
+			for prog in conf[category][smthing]:
+				if process_name == prog[prog.keys()[0]][0]['name']:
+					mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
+					com[prog[prog.keys()[0]][0]['name']] = "starting"
+					mythread.start()
+
 class	Microshell(cmd.Cmd):
 	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
 	if "USER" in os.environ:
@@ -282,8 +308,9 @@ class	Microshell(cmd.Cmd):
 		stop_process()
 		return True
 
+
 	def	do_start(self, process_name):
-		subprocess.Popen(process_name, shell=True)
+		start_proc(process_name)
 
 	def	do_kill(self, process_name):
 		'Kill a process by his PID or name.'
@@ -297,6 +324,10 @@ class	Microshell(cmd.Cmd):
 					progs[process_name].get_kill()
 			com[process_name] = "dead"
 			return
+
+	def do_restart(self, process_name):
+		self.do_kill(process_name)
+		self.do_start(process_name)
 
 	def close(self):
 		if self.file:
