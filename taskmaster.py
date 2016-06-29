@@ -316,22 +316,24 @@ class	Microshell(cmd.Cmd):
 		self.do_kill(process_name)
 		self.do_start(process_name)
 
-# def start_progs(process_name):													#launch the prog on start
-# 	if process_name == None:
-# 		for smthing in conf:
-# 			for prog in conf[smthing]:
-# 				mythread = MyThread(name = prog[prog.keys()[0]][0]['name'])
-# 				com[prog[prog.keys()[0]][0]['name']] = "starting"
-# 				mythread.start()
-# 	else:
-# 		# for smthing in conf:
-# 			# for prog in conf[smthing]:
-# 				# meh = prog.keys()[0]
-# 				# if meh == process_name:
-# 					# print "on lance {}".format(process_name)
-# 					mythread = MyThread(name = process_name)
-# 					com[prog[prog.keys()[0]][0]['name']] = "starting"
-# 					mythread.start()
+
+# .
+# \'~~~-,
+#  \    '-,_ 
+#   \ /\    `~'~''\          M E X I C O
+#   _\ \\          \/~\ 
+#   \__ \\             \   
+#      \ \\.             \  
+#       \ \ \             `~~
+#        '\\ \.             /
+#         L \  \            |
+#          \_\  \      o    |             _.----,
+#                |       San \           !     /
+#               '._      Luis \_      __/    _/
+#                  \_    Potosi ''--''    __/
+#                    \.__                |
+#                        ''.__  __.._   __\
+#                             ''     './  `
 
 def	kill_thread():
 	for p in com:
