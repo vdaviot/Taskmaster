@@ -17,18 +17,19 @@ path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 class Thread_kill(threading.Thread):
 	def run(process_name):
 		if process_name in com:
-			com[process_name] == "dying"
-			for p in progs:
-				if p.name == process_name:
-					p.suicide()
-					t = time.time()
-					while t + p.timeout <= time.time():
-						pid = p.get_pid()
-						if pid == None:
-							com[process_name] = "dead"
-							return
-					p.get_kill()
-					com[process_name] = "dead"
+			if com[process_name] == "ready" or "dead":
+				com[process_name] == "dying"
+				for p in progs:
+					if p.name == process_name:
+						p.suicide()
+						t = time.time()
+						while t + p.timeout <= time.time():
+							pid = p.get_pid()
+							if pid == None:
+								com[process_name] = "dead"
+								return
+						p.get_kill()
+						com[process_name] = "dead"
 		return
 
 
@@ -77,6 +78,7 @@ class MyThread(threading.Thread):
 			verif = patience[1]
 			if int(verif) != int(obj.expected):
 			 	print "{} returned an error, expected {} got {}.".format(obj.name, obj.expected, verif)
+			 	sys.stdout.flush()
 			 	if tryit > 0:
 			 		tryit -= 1
 			 		continue
@@ -113,15 +115,19 @@ class Program(object):
 					print "Process {} ({}) not killed because of reason.".format(self.name, pid)
 
 	def get_in_conf(self, arg, name, info):
-		for prog in conf[arg]:
-			if prog.get(name):
-				i = 0
-				while prog[prog.keys()[0]][i]:
-					if not prog[prog.keys()[0]][i]:
-						break
-					if prog[prog.keys()[0]][i].keys()[0] == info:
-						return prog[prog.keys()[0]][i].get(info)
-					i += 1
+		try:
+			for prog in conf[arg]:
+				if prog.get(name):
+					i = 0
+					while prog[prog.keys()[0]][i]:
+						if not prog[prog.keys()[0]][i]:
+							break
+						if prog[prog.keys()[0]][i].keys()[0] == info:
+							return prog[prog.keys()[0]][i].get(info)
+						i += 1
+		except IndexError as err:
+			print "conf not well formated see conf for more explanations".format(err)
+			finish(1)
 		return None
 
 	def	get_timer(self):
@@ -204,7 +210,7 @@ class Program(object):
 		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
 		print "		- Program {} is {}.".format(self.name, self.status)
 		print "		- {} instance of {} program needed.".format(self.number, self.name)
-		print "		- Restart status: {}.".format(self.restart)
+		# print "		- Restart status: {}.".format(self.restart)
 		print "		- Boot status: {}.".format(self.boot)
 		print "		- Program expected to return {}.".format(self.expected)
 		print "		- Timeout set to {}.".format(self.timeout)
@@ -283,8 +289,9 @@ class	Microshell(cmd.Cmd):
 				if p.name == name:
 					p.gstatus()
 		else:
-			for p in progs:
-				p.gstatus()
+			for p in com:
+				print "\t{} is {}".format(p, com[p])
+				# p.gstatus()
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
@@ -299,7 +306,7 @@ class	Microshell(cmd.Cmd):
 	def do_exit(self, arg):
 		'Exit the program.'
 		print "Thank you for using Taskmaster.{}".format(arg)
-		finish()
+		finish(0)
 		return True
 
 
@@ -333,24 +340,32 @@ class	Microshell(cmd.Cmd):
 # 					com[prog[prog.keys()[0]][0]['name']] = "starting"
 # 					mythread.start()
 
+def proc_is_chilling(process_name):
+	if process_name in com:
+		if com[process_name] == "ready" or "dead":
+			return 1
+		print "{} : is busy".format(process_name)
+	print "{} is not in the conf file".format(process_name)
 def	kill_thread():
 	for p in com:
 		if com[p] != "dead" or "ready":
 			kill(p)
 
 def	kill(process_name):
-	myThread = Thread_kill(name = process_name)
-	myThread.start()
+	if proc_is_chilling(process_name) == 1:
+			myThread = Thread_kill(name = process_name)
+			myThread.start()
+
 
 def signal_handler(signal, frame):
     print "You pressed {}.".format(signal)
     kill_thread()
     sys.exit(signal)
 
-def finish():
+def finish(value):
 	print ("\033[91mended:" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	kill_thread()
-	sys.exit(9)
+	sys.exit(value)
 
 def get_conf():														#return the configuration
 	stream = open(path, 'r')
@@ -370,9 +385,10 @@ def	parse_progs():
 	return liste
 
 def	start(process_name):
-	com[process_name] = "starting"
-	mythread = MyThread(name=process_name)
-	mythread.start()
+	if proc_is_chilling(process_name) == 1:
+		com[process_name] = "starting"
+		mythread = MyThread(name=process_name)
+		mythread.start()
 
 def init():															#init
 	global	conf

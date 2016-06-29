@@ -12,7 +12,7 @@ programs:
         - discard_err: ~/error.txt
         - discard_out: ~/redirect.txt
         - env: Null
-        - wd: ~/
+        - wd: Null
         - umask: Null
     - pwd:
         - name: pwd
@@ -38,8 +38,8 @@ programs:
         - options: !!str 10
         - boot: True
         - expected: 0
-        - timeout: 3
-        - restarttry: 1
+        - timeout: 5
+        - restarttry: 0
         - stopsignal: 15
         - timeperiod: 30
         - discard: Null
