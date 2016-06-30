@@ -12,6 +12,7 @@ thread_count = None
 thread_count = 0
 com = {}
 path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
+SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) for n in dir(signal) if n.startswith('SIG') and '_' not in n )
 
 
 class Thread_kill(threading.Thread):
@@ -77,7 +78,7 @@ class MyThread(threading.Thread):
 					com[obj.name] = "ended"
 			verif = patience[1]
 			if int(verif) != int(obj.expected):
-			 	print "{} returned an error, expected {} got {}.".format(obj.name, obj.expected, verif)
+			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, verif)
 			 	sys.stdout.flush()
 			 	if tryit > 0:
 			 		tryit -= 1
@@ -100,9 +101,9 @@ class Program(object):
 				try:
 					os.kill(int(pid), 11)
 				except OSError, err:
-					print "Error \"{}\" occured when closing the {} program.".format(err, self.name)
+					print "\033[91mError \"{}\" occured when closing the {} program.\033[0m".format(err, self.name)
 					return
-				print "Process " + self.name + " ended."
+				print "\033[92mProcess " + self.name + " ended.\033[0m"
 
 	def suicide(self):
 		sign = self.get_stop_signal("programs")
@@ -110,9 +111,9 @@ class Program(object):
 			if pid != None:
 				try:
 					os.kill(int(pid), sign)
-					print "Process " + self.name + " ended."
+					print "\033[92mProcess " + self.name + " ended.\033[0m"
 				except OSError, err:
-					print "Process {} ({}) not killed because of reason.".format(self.name, pid)
+					print "\033[91mProcess {} ({}) not killed because of reason.\033[0m".format(self.name, pid)
 
 	def get_in_conf(self, arg, name, info):
 		try:
@@ -126,7 +127,7 @@ class Program(object):
 							return prog[prog.keys()[0]][i].get(info)
 						i += 1
 		except IndexError as err:
-			print "conf not well formated see conf for more explanations".format(err)
+			print "\033[91mconf not well formated see conf for more explanations\033[0m".format(err)
 			finish(1)
 		return None
 
@@ -252,7 +253,7 @@ class Program(object):
 			try:
 				os.chdir(self.wd)
 			except OSError:
-				print "{} directory does not exist.".format(self.wd)
+				print "\033[91m{} directory does not exist.\033[0m".format(self.wd)
 		self.umask = self.get_umask(where)
 		if self.umask != None:
 			self.old_umask = os.umask(self.umask)
@@ -291,7 +292,6 @@ class	Microshell(cmd.Cmd):
 		else:
 			for p in com:
 				print "\t{} is {}".format(p, com[p])
-				# p.gstatus()
 
 	def do_reload(self, file):
 		'Reload the configuration file.'
@@ -305,7 +305,7 @@ class	Microshell(cmd.Cmd):
 
 	def do_exit(self, arg):
 		'Exit the program.'
-		print "Thank you for using Taskmaster.{}".format(arg)
+		print "\033[92mThank you for using Taskmaster.{}\033[0m".format(arg)
 		finish(0)
 		return True
 
@@ -346,8 +346,9 @@ def proc_is_chilling(process_name):
 	if process_name in com:
 		if com[process_name] == "ready" or "dead":
 			return 1
-		print "{} : is busy".format(process_name)
-	print "{} is not in the conf file".format(process_name)
+		print "\033[90m{} : is busy.\033[0m".format(process_name)
+	print "\033[91m{} not in the conf file.\033[0m".format(process_name)
+
 def	kill_thread():
 	for p in com:
 		if com[p] != "dead" or "ready":
@@ -355,12 +356,11 @@ def	kill_thread():
 
 def	kill(process_name):
 	if proc_is_chilling(process_name) == 1:
-			myThread = Thread_kill(name = process_name)
-			myThread.start()
-
-
+		myThread = Thread_kill(name = process_name)
+		myThread.start()
+		
 def signal_handler(signal, frame):
-    print "You pressed {}.".format(signal)
+    print "\033[92mYou pressed {}({}).\033[0m".format(SIGNALS_TO_NAMES_DICT[signal], signal)
     kill_thread()
     sys.exit(signal)
 
