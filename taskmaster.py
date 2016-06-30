@@ -166,7 +166,7 @@ class Program(object):
 
 	def get_boot(self, arg):
 		boot = self.get_in_conf(arg, self.name, "boot")
-		if isinstance(boot, str):
+		if isinstance(boot, bool):
 			if boot == True or False:
 				return boot
 
