@@ -147,89 +147,125 @@ class Program(object):
 		return 'DEAD'
 
 	def	get_env(self, arg):
-		env = {}
-		env = self.get_in_conf(arg, self.name, "env")
-		return env
+		env = {}, self.get_in_conf(arg, self.name, "env")
+		if isinstance(env, dict):
+			return env
 
 	def	get_old_env(self):
 		return os.environ
 
 	def get_nb(self, arg):
-		return self.get_in_conf(arg, self.name, "nb")
+		nb = self.get_in_conf(arg, self.name, "nb")
+		if nb >= 0 and isinstance(nb, int):
+			return nb
 
 	def get_options(self, arg):
-		return self.get_in_conf(arg, self.name, "options")
+		options = self.get_in_conf(arg, self.name, "options")
+		if isinstance(options, str):
+			return options
 
 	def get_boot(self, arg):
-		return self.get_in_conf(arg, self.name, "boot")
+		boot = self.get_in_conf(arg, self.name, "boot")
+		if isinstance(boot, str):
+			if boot == True or False:
+				return boot
 
 	def get_restart(self, arg):
-		return self.get_in_conf(arg, self.name, "restart")
+		restart = self.get_in_conf(arg, self.name, "restart")
+		if isinstance(restart, int):
+			return restart
 
 	def	get_expected(self, arg):
-		return self.get_in_conf(arg, self.name, "expected")
+		expected = self.get_in_conf(arg, self.name, "expected")
+		if isinstance(expected, int):
+			return expected
 
 	def	get_timeout(self, arg):
-		return self.get_in_conf(arg, self.name, "timeout")
+		timeout = self.get_in_conf(arg, self.name, "timeout")
+		if isinstance(timeout, int):
+			return timeout
 
 	def	get_nb_restart(self, arg):
-		return self.get_in_conf(arg, self.name, "restarttry")
+		restart = self.get_in_conf(arg, self.name, "restarttry")
+		if isinstance(restart, int):
+			return restart
 
 	def	get_stop_signal(self, arg):
-		return self.get_in_conf(arg, self.name, "stopsignal")
+		signal = self.get_in_conf(arg, self.name, "stopsignal")
+		if isinstance(signal, int):
+			return signal
 
 	def	get_time_period(self, arg):
-		return self.get_in_conf(arg, self.name, "timeperiod")
+		time = self.get_in_conf(arg, self.name, "timeperiod")
+		if isinstance(time, int):
+			return time
 
 	def	get_program_discard_err(self, arg):
 		discard_err = self.get_in_conf(arg, self.name, "discard_err")
-		if str(discard_err)[0] == "~":
-			discard_err = os.environ["HOME"] + discard_err.replace(discard_err[:1], '')
-		return discard_err
+		if isinstance(discard_err, str):
+			if str(discard_err)[0] == "~":
+				discard_err = os.environ["HOME"] + discard_err.replace(discard_err[:1], '')
+			return discard_err
 
 	def	get_program_discard_out(self, arg):
 		discard_out = self.get_in_conf(arg, self.name, "discard_out")
-		if str(discard_out)[0] == "~":
-			return os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
+		if isinstance(discard_out, str):
+			if str(discard_out)[0] == "~":
+				return os.environ["HOME"] + discard_out.replace(discard_out[:1], '')
+			return discard_out
 
 	def	get_wd(self, arg):
 		last = self.get_in_conf(arg, self.name, "wd")
-		if last != None:
+		if isinstance(last, str):
 			if last[0] == "~":
 				return os.environ["HOME"] + last.replace(last[:1], '')
-		return last
+			return last
 
 	def	get_umask(self, arg):
 		var = self.get_in_conf(arg, self.name, "umask")
-		return var
+		if isinstance(var, int):
+			return var
 
 	def gstatus(self):
 		print "----------------------------------------------"
 		print " "
-		print "Program {} settings/status:".format(self.name)
-		print "		- Program state = {}".format(com[self.name])
-		print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
-		print "		- Program {} is {}.".format(self.name, self.status)
-		print "		- {} instance of {} program needed.".format(self.number, self.name)
-		# print "		- Restart status: {}.".format(self.restart)
-		print "		- Boot status: {}.".format(self.boot)
-		print "		- Program expected to return {}.".format(self.expected)
-		print "		- Timeout set to {}.".format(self.timeout)
-		print "		- If a problem happend, Taskmaster will restart {} {} times.".format(self.name, self.nb_restart)
-		print "		- {} will shutdown if {} is send.".format(self.name, self.stop_signal)
-		print "		- If a problem happend, {} will be kept alive for {} seconds.".format(self.name, self.time_period)
-		print "		- {} stderr is set to {}.".format(self.name, self.discard_err)
-		print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
-		print "		- Working directory set to {}.".format(self.wd)
-		print "		- Umask variable is set to {}.".format(self.umask)
-		if self.new_env != None:
-			print "		- New env specified: "
-			for p in self.new_env:
-				print "			- {}.".format(p)
-		if self.sstarted == True:
-			print "		- Program {} successfuly started.".format(self.name)
-		else:
-			print "		- Program {} not started because of reasons.".format(self.name)
+		if self.name:
+			print "Program {} settings/status:".format(self.name)
+			print "		- Program state = {}".format(com[self.name])
+			if self.pid:
+				print "		- The PID of {} is {}.".format(self.name, self.pid.split("\n", 2))
+			if self.status:
+				print "		- Program {} is {}.".format(self.name, self.status)
+				if self.number:
+					print "		- {} instance of {} program needed.".format(self.number, self.name)
+			if self.boot:
+				print "		- Boot status: {}.".format(self.boot)
+			if self.expected:
+				print "		- Program expected to return {}.".format(self.expected)
+			if self.timeout:
+				print "		- Timeout set to {}.".format(self.timeout)
+			if self.nb_restart:
+				print "		- If a problem happend, Taskmaster will restart {} {} times.".format(self.name, self.nb_restart)
+			if self.stopsignal:
+				print "		- {} will shutdown if {} is send.".format(self.name, self.stop_signal)
+			if self.time_period:
+				print "		- If a problem happend, {} will be kept alive for {} seconds.".format(self.name, self.time_period)
+			if self.discard_err:
+				print "		- {} stderr is set to {}.".format(self.name, self.discard_err)
+			if self.discard_out:
+				print "		- {} stdout is set to {}.".format(self.name, self.discard_out)
+			if self.wd:
+				print "		- Working directory set to {}.".format(self.wd)
+			if self.umask:
+				print "		- Umask variable is set to {}.".format(self.umask)
+			if self.new_env:
+				print "		- New env specified: "
+				for p in self.new_env:
+					print "			- {}.".format(p)
+			if self.sstarted == True:
+				print "		- Program {} successfuly started.".format(self.name)
+			else:
+				print "		- Program {} not started because of reasons.".format(self.name)
 		print " "
 		print "----------------------------------------------"
 
@@ -249,7 +285,7 @@ class Program(object):
 		self.discard_err = self.get_program_discard_err(where)
 		self.discard_out = self.get_program_discard_out(where)
 		self.wd = self.get_wd(where)
-		if self.wd != None:
+		if self.wd:
 			try:
 				os.chdir(self.wd)
 			except OSError:
@@ -264,11 +300,11 @@ class Program(object):
 		self.sstarted = self.get_timer()
 		progs[self.name] = self
 		self.cmd = ""
-		if self.new_env != None:
+		if self.new_env:
 			for cmd in self.new_env:
 				pouet = cmd.keys()[0]
 				self.cmd += pouet + "=" + cmd.get(pouet) + " "
-		if self.options != None:
+		if self.options:
 			self.cmd += self.name + " " + self.options
 		else:
 			self.cmd += self.name
@@ -358,7 +394,7 @@ def	kill(process_name):
 	if proc_is_chilling(process_name) == 1:
 		myThread = Thread_kill(name = process_name)
 		myThread.start()
-		
+
 def signal_handler(signal, frame):
     print "\033[92mYou pressed {}({}).\033[0m".format(SIGNALS_TO_NAMES_DICT[signal], signal)
     kill_thread()

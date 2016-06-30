@@ -2,7 +2,7 @@ programs:
     - ls:
         - name: ls
         - nb: 1
-        - options: -la
+        - options: ls -la
         - boot: True
         - expected: 0
         - timeout: 5
