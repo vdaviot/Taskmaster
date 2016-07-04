@@ -33,7 +33,7 @@ class User():
 		msg['Subject'] = "Taskmaster\'s infos"
 		body = "Hello {},\nThis is an automatic message from Taskmaster.\nThe following concern the execution of your {} program.\nPlease do not reply to this e-mail.\n".format(dest, obj.name)
 		if status > 0 and content:
-			body += "\nThis happened to your {} program :\n    ".format(obj.name) + content
+			body += "\nThis happened to your {} program :\n    -".format(obj.name) + content
 			body += "\n\nThanks you for using Taskmaster, See you soon!\n\n{}".format(os.environ["USER"])
 			msg.attach(MIMEText(body, 'plain'))
 			try:
@@ -181,12 +181,16 @@ class Program(object):
 			for prog in conf[arg]:
 				if prog.get(name):
 					i = 0
-					while prog[prog.keys()[0]][i]:
-						if not prog[prog.keys()[0]][i]:
-							break
-						if prog[prog.keys()[0]][i].keys()[0] == info:
-							return prog[prog.keys()[0]][i].get(info)
-						i += 1
+					try :
+						while prog[prog.keys()[0]][i]:
+							if not prog[prog.keys()[0]][i]:
+								break
+							if prog[prog.keys()[0]][i].keys()[0] == info:
+								return prog[prog.keys()[0]][i].get(info)
+							i += 1
+					except AttributeError, err:
+						print "\033[91m{}\033[0m".format(err)
+						return
 		except IndexError as err:
 			print "\033[91mconf.yaml not well formated, you might take a look at it and see what\'s going on!\033[0m".format(err)
 			finish(1)
@@ -412,6 +416,13 @@ class	Microshell(cmd.Cmd):
 		newppl = add_user(mail)
 		People.append(newppl)
 
+	def	do_who(self, arg):
+		if arg == "":
+			print "\033[91mNo user defined.\033[0m"
+			return
+		for ppl in People:
+			print ppl.mail
+
 	def	do_start(self, process_name):
 		'Start a program in the configuration file'
 		for p in progs:
@@ -500,12 +511,20 @@ def	add_user(email):
 
 def	parse_progs():
 	liste = []
-	for smthing in conf:
-		for prog in conf[smthing]:
-			meh = prog.keys()[0]
-			new = Program(meh, conf)
-			liste.append(new)
-	return liste
+	if conf:
+		for smthing in conf:
+			try:
+				for prog in conf[smthing]:
+					meh = prog.keys()[0]
+					new = Program(meh, conf)
+					liste.append(new)
+			except TypeError, err:
+				print "\033[91mError detected: {}\033[0m".format(err)
+				return
+	if isinstance(liste, list):
+		return liste
+	else:
+		return None
 
 def	start(process_name):
 	if process_name in com:
@@ -526,10 +545,14 @@ def init():															#init
 	signal.signal(signal.SIGINT, signal_handler)
 	conf = get_conf()
 	progs = parse_progs()
-	for p in progs:
-		com[p.name] = "ready"
-		if p.boot == True:
-			start(p.name)
+	if not progs:
+		print "\033[91mNothing found in the configuration file or proglist failed to initialize, closing the program.\033[0m"
+		finish(2)
+	else:
+		for p in progs:
+			com[p.name] = "ready"
+			if p.boot == True:
+				start(p.name)
 
 
 if __name__ == '__main__':											#main
