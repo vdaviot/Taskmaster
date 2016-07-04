@@ -15,6 +15,19 @@ path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) for n in dir(signal) if n.startswith('SIG') and '_' not in n )
 
 
+class Thread_timeperiod(threading.Thread):
+	def run(self):
+		if self.name in com:
+			if com[self.name] == "starting":
+				for p in progs:
+					if p.name == self.name:
+						t = time.time()
+						while t + p.time_period > time.time():
+							if com[self.name] != "starting":
+								return
+						com[self.name] = "running"
+		return
+
 class Thread_kill(threading.Thread):
 	def run(self):
 		if self.name in com:
@@ -27,7 +40,7 @@ class Thread_kill(threading.Thread):
 				if p.name == self.name:
 					p.suicide()
 					t = time.time()
-					while t + p.timeout <= time.time():
+					while t + p.timeout > time.time():
 						pid = p.get_pid()
 						if pid == None:
 							com[self.name] = "dead"
@@ -37,7 +50,6 @@ class Thread_kill(threading.Thread):
 			if r == 1:
 				start(self.name)
 		return
-
 
 class MyThread(threading.Thread):
 	def choose(self):
@@ -52,12 +64,13 @@ class MyThread(threading.Thread):
 		if obj == None:
 			return
 		i = obj.number
-		com[obj.name] = "running"
 		while i > 0:
 			if obj.discard_out != None and obj.discard_err != None:
 				with open(obj.discard_out, "a") as f:
 					with open(obj.discard_err, "a") as e:
 						subprocess.Popen(obj.cmd, shell=True, stdout=f, stderr=e)
+						myThread = Thread_timeperiod(name = obj.name)
+						myThread.start()
 						try:
 							patience = os.waitpid(0, 0)
 						except OSError, err:
@@ -65,6 +78,8 @@ class MyThread(threading.Thread):
 			elif obj.discard_err != None and obj.discard_out == None:
 				with open(obj.discard_err, "a") as e:
 					subprocess.Popen(obj.cmd, shell=True, stderr=e)
+					myThread = Thread_timeperiod(name = obj.name)
+					myThread.start()
 					try:
 						patience = os.waitpid(0, 0)
 					except OSError, err:
@@ -72,12 +87,16 @@ class MyThread(threading.Thread):
 			elif obj.discard_out != None and obj.discard_err == None:
 				with open(obj.discard_out, "a") as f:
 					subprocess.Popen(obj.cmd, shell=True, stdout=f)
+					myThread = Thread_timeperiod(name = obj.name)
+					myThread.start()
 					try:
 						patience = os.waitpid(0, 0)
 					except OSError, err:
 						com[obj.name] = "ended"
 			else:
 				subprocess.Popen(obj.cmd, shell=True)
+				myThread = Thread_timeperiod(name = obj.name)
+				myThread.start()
 				try:
 					patience = os.waitpid(0, 0)
 				except OSError, err:

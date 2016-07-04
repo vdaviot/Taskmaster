@@ -8,7 +8,7 @@ programs:
         - timeout: 5
         - restarttry: 2
         - stopsignal: 2
-        - timeperiod: 30
+        - timeperiod: 0
         - discard_err: ~/error.txt
         - discard_out: ~/redirect.txt
         - env: Null
@@ -41,7 +41,7 @@ programs:
         - timeout: 5
         - restarttry: 0
         - stopsignal: 15
-        - timeperiod: 30
+        - timeperiod: 10
         - discard: Null
         - discard_err: ~/error.txt
         - discard_out: Null
