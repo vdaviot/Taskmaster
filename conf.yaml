@@ -2,7 +2,7 @@ programs:
     - ls:
         - name: ls
         - nb: 1
-        - options: ls -la
+        - options: -la
         - boot: True
         - expected: 0
         - timeout: 5
@@ -35,7 +35,7 @@ programs:
     - sleep:
         - name: sleep
         - nb: 1
-        - options: !!str 10
+        - options: !!str 20
         - boot: True
         - expected: 0
         - timeout: 5

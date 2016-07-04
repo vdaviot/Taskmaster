@@ -16,21 +16,26 @@ SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) for n in dir(signal) if n.s
 
 
 class Thread_kill(threading.Thread):
-	def run(process_name):
-		if process_name in com:
-			if com[process_name] == "ready" or "dead":
-				com[process_name] == "dying"
-				for p in progs:
-					if p.name == process_name:
-						p.suicide()
-						t = time.time()
-						while t + p.timeout <= time.time():
-							pid = p.get_pid()
-							if pid == None:
-								com[process_name] = "dead"
-								return
-						p.get_kill()
-						com[process_name] = "dead"
+	def run(self):
+		if self.name in com:
+			if com[self.name] == "restart":
+				r = 1
+			else:
+				r = 0
+			com[self.name] == "dying"
+			for p in progs:
+				if p.name == self.name:
+					p.suicide()
+					t = time.time()
+					while t + p.timeout <= time.time():
+						pid = p.get_pid()
+						if pid == None:
+							com[self.name] = "dead"
+							return
+					p.get_kill()
+					com[self.name] = "dead"
+			if r == 1:
+				start(self.name)
 		return
 
 
@@ -47,38 +52,38 @@ class MyThread(threading.Thread):
 		if obj == None:
 			return
 		i = obj.number
+		com[obj.name] = "running"
 		while i > 0:
 			if obj.discard_out != None and obj.discard_err != None:
 				with open(obj.discard_out, "a") as f:
 					with open(obj.discard_err, "a") as e:
 						subprocess.Popen(obj.cmd, shell=True, stdout=f, stderr=e)
 						try:
-							patience = os.waitpid(-1, 0)
+							patience = os.waitpid(0, 0)
 						except OSError, err:
 							com[obj.name] = "ended"
 			elif obj.discard_err != None and obj.discard_out == None:
 				with open(obj.discard_err, "a") as e:
 					subprocess.Popen(obj.cmd, shell=True, stderr=e)
 					try:
-						patience = os.waitpid(-1, 0)
+						patience = os.waitpid(0, 0)
 					except OSError, err:
 						com[obj.name] = "ended"
 			elif obj.discard_out != None and obj.discard_err == None:
 				with open(obj.discard_out, "a") as f:
 					subprocess.Popen(obj.cmd, shell=True, stdout=f)
 					try:
-						patience = os.waitpid(-1, 0)
+						patience = os.waitpid(0, 0)
 					except OSError, err:
 						com[obj.name] = "ended"
 			else:
 				subprocess.Popen(obj.cmd, shell=True)
 				try:
-					patience = os.waitpid(-1, 0)
+					patience = os.waitpid(0, 0)
 				except OSError, err:
 					com[obj.name] = "ended"
-			verif = patience[1]
-			if int(verif) != int(obj.expected):
-			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, verif)
+			if int(patience[1]) != int(obj.expected):
+			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
 			 	sys.stdout.flush()
 			 	if tryit > 0:
 			 		tryit -= 1
@@ -347,18 +352,26 @@ class	Microshell(cmd.Cmd):
 
 
 	def	do_start(self, process_name):
+		'Start a program in the configuration file'
 		for p in progs:
 			if p.name == process_name:
 				start(process_name)
 
 	def	do_kill(self, process_name):
-		kill(process_name)
+		'Stop a program started by Taskmaster'
+		if com[process_name] == "running":
+			kill(process_name)
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
-		self.do_kill(process_name)
-		self.do_start(process_name)
-
+		if process_name in com:
+			if com[process_name] == "running": # proc can be kill when ... + kill can also start sometimes
+				com[process_name] = "restart"
+				kill(process_name)
+			elif com[process_name] == "dead" or com[process_name] == "ended" or com[process_name] == "ready":
+				self.do_start(process_name)
+		else:
+			print "{} is not in conf file".format(process_name)
 
 # .
 # \'~~~-,
@@ -380,20 +393,25 @@ class	Microshell(cmd.Cmd):
 
 def proc_is_chilling(process_name):
 	if process_name in com:
-		if com[process_name] == "ready" or "dead":
+		if com[process_name] == "ready" or com[process_name] == "dead" or com[process_name] == "endead":
 			return 1
 		print "\033[90m{} : is busy.\033[0m".format(process_name)
 	print "\033[91m{} not in the conf file.\033[0m".format(process_name)
 
 def	kill_thread():
 	for p in com:
-		if com[p] != "dead" or "ready":
+		if com[p] != "dead" and com[p] != "ready":
 			kill(p)
 
 def	kill(process_name):
-	if proc_is_chilling(process_name) == 1:
-		myThread = Thread_kill(name = process_name)
-		myThread.start()
+	if process_name in com:
+		if com[process_name] == "running" or com[process_name] == "restart":
+			myThread = Thread_kill(name = process_name)
+			myThread.start()
+		else:
+			print "Cant stop {}, it is actually {}".format(process_name, com[process_name])
+	else:
+		print "{} is not in conf file".format(process_name)
 
 def signal_handler(signal, frame):
     print "\033[92mYou pressed {}({}).\033[0m".format(SIGNALS_TO_NAMES_DICT[signal], signal)
@@ -402,7 +420,7 @@ def signal_handler(signal, frame):
 
 def finish(value):
 	print ("\033[91mended:" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
-	kill_thread()
+	kill_1thread()
 	sys.exit(value)
 
 def get_conf():														#return the configuration
@@ -423,10 +441,16 @@ def	parse_progs():
 	return liste
 
 def	start(process_name):
-	if proc_is_chilling(process_name) == 1:
-		com[process_name] = "starting"
-		mythread = MyThread(name=process_name)
-		mythread.start()
+	if process_name in com:
+		if com[process_name] == "ready" or com[process_name] == "dead" or com[process_name] == "ended":
+			print "starting {}".format(process_name)
+			com[process_name] = "starting"
+			mythread = MyThread(name=process_name)
+			mythread.start()
+		else:
+			print "cant start {}, it is actually {}".format(process_name, com[process_name])
+	else:
+		print "{} is not in conf file".format(process_name	)
 
 def init():															#init
 	global	conf
