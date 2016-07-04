@@ -1,18 +1,46 @@
 #!/usr/bin/python
 
 import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal
-
+import smtplib as sm
+import getpass
 from subprocess import check_output, Popen
+from email.MIMEMultipart import MIMEMultipart
+from email.MIMEText import MIMEText
 
 global com
 global stream
 global thread_count
 global path
+global People
+People = []
 thread_count = None
 thread_count = 0
 com = {}
 path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) for n in dir(signal) if n.startswith('SIG') and '_' not in n )
+
+class User():
+	def __init__(self, mail):
+		self.mail = mail
+		self.passwd = getpass.getpass("Enter you password: ")
+		print "New user set:\n- {}".format(self.mail)
+
+	def	send_mail(self, sendto, content, status, obj):		#status 1 = error / status 0 = success
+		dest = sendto.split("@")[0]
+		msg = MIMEMultipart()
+		msg['From'] = self.mail
+		msg['To'] = sendto
+		msg['Subject'] = "Taskmaster\'s infos"
+		body = "Hello {},\nThis is an automatic message from Taskmaster.\nThe following concern the execution of your {} program.\nPlease do not reply to this e-mail.\n".format(dest, obj.name)
+		if status > 0 and content:
+			body += "\nThis happened to your {} program :\n    ".format(obj.name) + content
+			body += "\n\nThanks you for using Taskmaster, See you soon!\n\n{}".format(os.environ["USER"])
+			msg.attach(MIMEText(body, 'plain'))
+			server = sm.SMTP('smtp.gmail.com:587')
+			server.starttls()
+			server.login(self.mail, 'lhrcdzobskxqkmnd')
+			text = msg.as_string()
+			server.sendmail(self.mail, sendto, text)
 
 
 class Thread_timeperiod(threading.Thread):
@@ -63,6 +91,7 @@ class MyThread(threading.Thread):
 	def run(self):
 		obj = self.choose()
 		tryit = obj.nb_restart
+		patience = 0
 		if obj == None:
 			return
 		i = obj.number
@@ -371,6 +400,12 @@ class	Microshell(cmd.Cmd):
 		finish(0)
 		return True
 
+	def	do_user(self, mail):
+		'Define a new user. Taskmaster will send you email everytime something happend. Utilisation: user <mail> <passwd>'
+		newppl = add_user(mail)
+		People.append(newppl)
+		for p in progs:
+			newppl.send_mail('bciss@student.42.fr', 'Nothing to say about {}.'.format(p.name), p.status, p)
 
 	def	do_start(self, process_name):
 		'Start a program in the configuration file'
@@ -453,6 +488,10 @@ def get_conf():														#return the configuration
 	except yaml.YAMLError as exc:
 		print exc
 		return None
+
+def	add_user(email):
+	newppl = User(email)
+	return newppl
 
 def	parse_progs():
 	liste = []
