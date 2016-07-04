@@ -134,6 +134,7 @@ class MyThread(threading.Thread):
 					com[obj.name] = "ended"
 			if int(patience[1]) != int(obj.expected):
 			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
+			 	obj.strstatus = "{} returned an error, expected {} got {}.\nBe carefull with the configuration file, the problem might come from yourself.\n".format(obj.name, obj.expected, patience[1])
 			 	sys.stdout.flush()
 			 	if tryit > 0:
 			 		tryit -= 1
@@ -142,11 +143,13 @@ class MyThread(threading.Thread):
 			 		break
 			 	elif tryit == -1:
 			 		continue
+			else:
+			 	obj.strstatus = "No problem occured during {}\'s execution (returned {} as expected).".format(obj.name, obj.expected)
 			i  = i - 1
+		for ppl in People:
+			User.send_mail(ppl, ppl.mail, obj.strstatus, obj.status, obj)
 		com[obj.name] = "ended"
 		return
-
-
 
 
 class Program(object):
@@ -363,10 +366,11 @@ class Program(object):
 			self.cmd += self.name + " " + self.options
 		else:
 			self.cmd += self.name
+		self.strstatus = ""
 
 
 class	Microshell(cmd.Cmd):
-	intro = '\033[92m' + '\n******************************************\n****      Welcome in Taskmaster.      ****\n****    Type help to list command.    ****\n******************************************\n' + '\033[0m'
+	intro = '\033[92m' + '\n******************************************\n****      \033[0mWelcome in Taskmaster.      \033[92m****\n****\033[0m    Type help to list command.\033[92m    ****\n******************************************\n' + '\033[0m'
 	if "USER" in os.environ:
 		prompt = os.environ["USER"] + "@42>"
 		user = os.environ["USER"] + "@student.42.fr"
@@ -418,7 +422,7 @@ class	Microshell(cmd.Cmd):
 		if com[process_name] == "running" or com[process_name] == "starting":
 			kill(process_name)
 		else:
-			print "cant kill {} its actually {}".format(process_name, com[process_name])
+			print "Cant kill {}, it\'s actually {}.".format(process_name, com[process_name])
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
@@ -467,9 +471,9 @@ def	kill(process_name):
 			myThread = Thread_kill(name = process_name)
 			myThread.start()
 		else:
-			print "Cant stop {}, it is actually {}".format(process_name, com[process_name])
+			print "\033[91mCant stop {}, it is actually {}\033[0m".format(process_name, com[process_name])
 	else:
-		print "{} is not in conf file".format(process_name)
+		print "\033[91m{} is not in conf file\033[0m".format(process_name)
 
 def signal_handler(signal, frame):
     print "\033[92mYou pressed {}({}).\033[0m".format(SIGNALS_TO_NAMES_DICT[signal], signal)
@@ -477,8 +481,8 @@ def signal_handler(signal, frame):
     sys.exit(signal)
 
 def finish(value):
-	print ("\033[91mended:" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
-	kill_1thread()
+	print ("\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
+	kill_thread()
 	sys.exit(value)
 
 def get_conf():														#return the configuration
@@ -505,14 +509,14 @@ def	parse_progs():
 def	start(process_name):
 	if process_name in com:
 		if com[process_name] == "ready" or com[process_name] == "dead" or com[process_name] == "ended":
-			print "starting {}".format(process_name)
+			print "\033[92mstarting {}\033[0m".format(process_name)
 			com[process_name] = "starting"
 			mythread = MyThread(name = process_name)
 			mythread.start()
 		else:
-			print "cant start {}, it is actually {}".format(process_name, com[process_name])
+			print "\033[91mcant start {}, it is actually {}\033[0m".format(process_name, com[process_name])
 	else:
-		print "{} is not in conf file".format(process_name	)
+		print "\033[91m{} is not in conf file\033[0m".format(process_name	)
 
 def init():															#init
 	global	conf
