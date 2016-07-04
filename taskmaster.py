@@ -36,11 +36,14 @@ class User():
 			body += "\nThis happened to your {} program :\n    ".format(obj.name) + content
 			body += "\n\nThanks you for using Taskmaster, See you soon!\n\n{}".format(os.environ["USER"])
 			msg.attach(MIMEText(body, 'plain'))
-			server = sm.SMTP('smtp.gmail.com:587')
-			server.starttls()
-			server.login(self.mail, 'lhrcdzobskxqkmnd')
-			text = msg.as_string()
-			server.sendmail(self.mail, sendto, text)
+			try:
+				server = sm.SMTP('smtp.gmail.com:587')
+				server.starttls()
+				server.login(self.mail, 'lhrcdzobskxqkmnd')
+				text = msg.as_string()
+				server.sendmail(self.mail, sendto, text)
+			except sm.SMTPException, err:
+				print "\033[91m{}\033[0m".format(err)
 
 
 class Thread_timeperiod(threading.Thread):
