@@ -185,7 +185,7 @@ class Program(object):
 							return prog[prog.keys()[0]][i].get(info)
 						i += 1
 		except IndexError as err:
-			print "\033[91mconf not well formated see conf for more explanations\033[0m".format(err)
+			print "\033[91mconf.yaml not well formated, you might take a look at it and see what\'s going on!\033[0m".format(err)
 			finish(1)
 		return None
 
@@ -394,7 +394,7 @@ class	Microshell(cmd.Cmd):
 			try:
 				kill(p.name)
 			except IOError, err:
-				print "Nope"
+				print "\033[91m{}\033[0m".format(err)
 		conf = None
 		init()
 
@@ -408,8 +408,6 @@ class	Microshell(cmd.Cmd):
 		'Define a new user. Taskmaster will send you email everytime something happend. Utilisation: user <mail> <passwd>'
 		newppl = add_user(mail)
 		People.append(newppl)
-		for p in progs:
-			newppl.send_mail('bciss@student.42.fr', 'Nothing to say about {}.'.format(p.name), p.status, p)
 
 	def	do_start(self, process_name):
 		'Start a program in the configuration file'
@@ -422,7 +420,7 @@ class	Microshell(cmd.Cmd):
 		if com[process_name] == "running" or com[process_name] == "starting":
 			kill(process_name)
 		else:
-			print "Cant kill {}, it\'s actually {}.".format(process_name, com[process_name])
+			print "\033[91mCant kill {}, it\'s actually {}.\033[0m".format(process_name, com[process_name])
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
