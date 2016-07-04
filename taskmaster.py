@@ -28,6 +28,8 @@ class Thread_timeperiod(threading.Thread):
 						com[self.name] = "running"
 		return
 
+
+
 class Thread_kill(threading.Thread):
 	def run(self):
 		if self.name in com:
@@ -378,8 +380,10 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		'Stop a program started by Taskmaster'
-		if com[process_name] == "running":
+		if com[process_name] == "running" or com[process_name] == "starting":
 			kill(process_name)
+		else:
+			print "cant kill {} its actually {}".format(process_name, com[process_name])
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
@@ -424,7 +428,7 @@ def	kill_thread():
 
 def	kill(process_name):
 	if process_name in com:
-		if com[process_name] == "running" or com[process_name] == "restart":
+		if com[process_name] == "running" or com[process_name] == "restart" or com[process_name] == "starting":
 			myThread = Thread_kill(name = process_name)
 			myThread.start()
 		else:
@@ -464,7 +468,7 @@ def	start(process_name):
 		if com[process_name] == "ready" or com[process_name] == "dead" or com[process_name] == "ended":
 			print "starting {}".format(process_name)
 			com[process_name] = "starting"
-			mythread = MyThread(name=process_name)
+			mythread = MyThread(name = process_name)
 			mythread.start()
 		else:
 			print "cant start {}, it is actually {}".format(process_name, com[process_name])
