@@ -51,3 +51,6 @@ Todo:
 
 		- Write a documentation : TODO STONED
 
+	BUG:
+
+		- timeout anyway verify pid
