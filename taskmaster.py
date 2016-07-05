@@ -63,25 +63,30 @@ class Thread_timeperiod(threading.Thread):
 
 class Thread_kill(threading.Thread):
 	def run(self):
-		if self.name in com:
-			if com[self.name] == "restart":
-				r = 1
-			else:
-				r = 0
-			com[self.name] == "dying"
-			for p in progs:
-				if p.name == self.name:
-					p.suicide()
-					t = time.time()
-					while t + p.timeout > time.time():
-						pid = p.get_pid()
-						if pid == None:
-							com[self.name] = "dead"
-							return
-					p.get_kill()
-					com[self.name] = "dead"
-			if r == 1:
-				start(self.name)
+		try:
+			if self.name in com:
+				print "bijour"
+				if com[self.name] == "restart":
+					r = 1
+				else:
+					r = 0
+				com[self.name] == "dying"
+				for p in progs:
+					if p.name == self.name:
+						p.suicide()
+						t = time.time()
+						while t + p.timeout > time.time():
+							pid = p.get_pid()
+							if pid == None:
+								com[self.name] = "dead"
+								return
+						p.get_kill()
+						com[self.name] = "dead"
+				print "bye bye"
+				if r == 1:
+					start(self.name)
+		except IOError as err:
+			print "IOError shou shou !!"
 		return
 
 class MyThread(threading.Thread):
@@ -135,7 +140,7 @@ class MyThread(threading.Thread):
 					patience = os.waitpid(0, 0)
 				except OSError, err:
 					com[obj.name] = "ended"
-			if int(patience[1]) != int(obj.expected):
+			if patience[1] != obj.expected:
 			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
 			 	obj.strstatus = "{} returned an error, expected {} got {}.\nBe carefull with the configuration file, the problem might come from yourself.\n".format(obj.name, obj.expected, patience[1])
 			 	sys.stdout.flush()
@@ -204,8 +209,12 @@ class Program(object):
 		return False
 
 	def get_pid(self):
-		return os.popen("pgrep " + self.name).read()
-
+		pid =  os.popen("pgrep " + self.name).read()
+		if isinstance(pid, int) or isinstance(pid, list) or isinstance(pid, tuple) or isinstance(pid, str):
+			return pid
+		else:
+			print "[{}]".format(pid)
+			return None
 	def	get_status(self):
 		if self.pid:
 			return 'RUNNING'
@@ -431,10 +440,13 @@ class	Microshell(cmd.Cmd):
 
 	def	do_kill(self, process_name):
 		'Stop a program started by Taskmaster'
-		if com[process_name] == "running" or com[process_name] == "starting":
-			kill(process_name)
+		if process_name in com:
+			if com[process_name] == "running" or com[process_name] == "starting":
+					kill(process_name)
+			else:
+				print "\033[91mCant kill {}, it\'s actually {}.\033[0m".format(process_name, com[process_name])
 		else:
-			print "\033[91mCant kill {}, it\'s actually {}.\033[0m".format(process_name, com[process_name])
+			print "{} not in conf file".format(process_name)
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
