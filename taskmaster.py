@@ -33,7 +33,7 @@ class User():
 		msg['Subject'] = "Taskmaster\'s infos"
 		body = "Hello {},\nThis is an automatic message from Taskmaster.\nThe following concern the execution of your {} program.\nPlease do not reply to this e-mail.\n".format(dest, obj.name)
 		if status > 0 and content:
-			body += "\nThis happened to your {} program :\n    -".format(obj.name) + content
+			body += "\nThis happened to your {} program :\n    ".format(obj.name) + content
 			body += "\n\nThanks you for using Taskmaster, See you soon!\n\n{}".format(os.environ["USER"])
 			msg.attach(MIMEText(body, 'plain'))
 			try:
@@ -44,7 +44,6 @@ class User():
 				server.sendmail(self.mail, sendto, text)
 			except sm.SMTPException, err:
 				print "\033[91m{}\033[0m".format(err)
-
 
 class Thread_timeperiod(threading.Thread):
 	def run(self):
@@ -121,7 +120,7 @@ class MyThread(threading.Thread):
 					myThread.start()
 					try:
 						patience = os.waitpid(0, 0)
-					except OSError, err:
+					except OSError , err:
 						com[obj.name] = "ended"
 			elif obj.discard_out != None and obj.discard_err == None:
 				with open(obj.discard_out, "a") as f:
@@ -140,26 +139,32 @@ class MyThread(threading.Thread):
 					patience = os.waitpid(0, 0)
 				except OSError, err:
 					com[obj.name] = "ended"
-			if patience[1] != obj.expected:
-			 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
-			 	obj.strstatus = "{} returned an error, expected {} got {}.\nBe carefull with the configuration file, the problem might come from yourself.\n".format(obj.name, obj.expected, patience[1])
-			 	sys.stdout.flush()
-			 	if tryit > 0:
-			 		tryit -= 1
-			 		continue
-			 	elif tryit == 0:
-			 		break
-			 	elif tryit == -1:
-			 		continue
-			else:
-			 	obj.strstatus = "No problem occured during {}\'s execution (returned {} as expected).".format(obj.name, obj.expected)
-			i  = i - 1
-		for ppl in People:
-			User.send_mail(ppl, ppl.mail, obj.strstatus, obj.status, obj)
+			try:
+				if isinstance(patience[1], int):
+					if int(patience[1]) != int(obj.expected):
+					 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
+					 	obj.strstatus = "{} returned an error, expected {} got {}.\nBe carefull with the configuration file, the problem might come from yourself.\n".format(obj.name, obj.expected, patience[1])
+					 	sys.stdout.flush()
+					 	if tryit > 0:
+					 		tryit -= 1
+					 		continue
+					 	elif tryit == 0:
+					 		break
+					 	elif tryit == -1:
+					 		continue
+					else:
+					 	obj.strstatus = "No problem occured during {}\'s execution (returned {} as expected).".format(obj.name, obj.expected)
+					i  = i - 1
+				for ppl in People:
+					User.send_mail(ppl, ppl.mail, obj.strstatus, obj.status, obj)
+			except TypeError, err:
+				print "\033[91m{}\033[0m".format(err)
+				return
 		com[obj.name] = "ended"
 		return
 
 
+    
 class Program(object):
 	def get_kill(self):
 		for pid in self.get_pid().split():
@@ -186,19 +191,16 @@ class Program(object):
 			for prog in conf[arg]:
 				if prog.get(name):
 					i = 0
-					try :
-						while prog[prog.keys()[0]][i]:
-							if not prog[prog.keys()[0]][i]:
-								break
-							if prog[prog.keys()[0]][i].keys()[0] == info:
-								return prog[prog.keys()[0]][i].get(info)
-							i += 1
-					except AttributeError, err:
-						print "\033[91m{}\033[0m".format(err)
-						return
+					while prog[prog.keys()[0]][i]:
+						if not prog[prog.keys()[0]][i]:
+							break
+						if prog[prog.keys()[0]][i].keys()[0] == info:
+							return prog[prog.keys()[0]][i].get(info)
+						i += 1
 		except IndexError as err:
 			print "\033[91mconf.yaml not well formated, you might take a look at it and see what\'s going on!\033[0m".format(err)
 			finish(1)
+
 		return None
 
 	def	get_timer(self):
@@ -425,13 +427,6 @@ class	Microshell(cmd.Cmd):
 		newppl = add_user(mail)
 		People.append(newppl)
 
-	def	do_who(self, arg):
-		if arg == "":
-			print "\033[91mNo user defined.\033[0m"
-			return
-		for ppl in People:
-			print ppl.mail
-
 	def	do_start(self, process_name):
 		'Start a program in the configuration file'
 		for p in progs:
@@ -489,6 +484,9 @@ def	kill_thread():
 		if com[p] != "dead" and com[p] != "ready":
 			kill(p)
 
+def play(audio_file_path):
+    subprocess.call(["ffplay", "-nodisp", "-autoexit", audio_file_path])
+
 def	kill(process_name):
 	if process_name in com:
 		if com[process_name] == "running" or com[process_name] == "restart" or com[process_name] == "starting":
@@ -523,20 +521,15 @@ def	add_user(email):
 
 def	parse_progs():
 	liste = []
-	if conf:
-		for smthing in conf:
-			try:
-				for prog in conf[smthing]:
-					meh = prog.keys()[0]
-					new = Program(meh, conf)
-					liste.append(new)
-			except TypeError, err:
-				print "\033[91mError detected: {}\033[0m".format(err)
-				return
-	if isinstance(liste, list):
-		return liste
-	else:
-		return None
+	for smthing in conf:
+		try:
+			for prog in conf[smthing]:
+				meh = prog.keys()[0]
+				new = Program(meh, conf)
+				liste.append(new)
+		except TypeError as err:
+			print "\033[91m{}\033[0m".format(err)
+	return liste
 
 def	start(process_name):
 	if process_name in com:
@@ -548,7 +541,7 @@ def	start(process_name):
 		else:
 			print "\033[91mcant start {}, it is actually {}\033[0m".format(process_name, com[process_name])
 	else:
-		print "\033[91m{} is not in conf file\033[0m".format(process_name	)
+		print "\033[91m{} is not in conf file\033[0m".format(process_name)
 
 def init():															#init
 	global	conf
@@ -557,14 +550,10 @@ def init():															#init
 	signal.signal(signal.SIGINT, signal_handler)
 	conf = get_conf()
 	progs = parse_progs()
-	if not progs:
-		print "\033[91mNothing found in the configuration file or proglist failed to initialize, closing the program.\033[0m"
-		finish(2)
-	else:
-		for p in progs:
-			com[p.name] = "ready"
-			if p.boot == True:
-				start(p.name)
+	for p in progs:
+		com[p.name] = "ready"
+		if p.boot == True:
+			start(p.name)
 
 
 if __name__ == '__main__':											#main
