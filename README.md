@@ -49,3 +49,5 @@ Todo:
 
 		- Write any error in a recap file : TODO
 
+		- Write a documentation : TODO STONED
+

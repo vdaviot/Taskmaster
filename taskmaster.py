@@ -106,37 +106,37 @@ class MyThread(threading.Thread):
 			if obj.discard_out != None and obj.discard_err != None:
 				with open(obj.discard_out, "a") as f:
 					with open(obj.discard_err, "a") as e:
-						subprocess.Popen(obj.cmd, shell=True, stdout=f, stderr=e)
+						p = subprocess.Popen(obj.cmd, shell=True, stdout=f, stderr=e)
 						myThread = Thread_timeperiod(name = obj.name)
 						myThread.start()
 						try:
-							patience = os.waitpid(0, os.WNOHANG)
+							patience = os.waitpid(p.pid, 0)
 						except OSError, err:
 							com[obj.name] = "ended"
 			elif obj.discard_err != None and obj.discard_out == None:
 				with open(obj.discard_err, "a") as e:
-					subprocess.Popen(obj.cmd, shell=True, stderr=e)
+					p = subprocess.Popen(obj.cmd, shell=True, stderr=e)
 					myThread = Thread_timeperiod(name = obj.name)
 					myThread.start()
 					try:
-						patience = os.waitpid(0, os.WNOHANG)
+						patience = os.waitpid(p.pid, 0)
 					except OSError , err:
 						com[obj.name] = "ended"
 			elif obj.discard_out != None and obj.discard_err == None:
 				with open(obj.discard_out, "a") as f:
-					subprocess.Popen(obj.cmd, shell=True, stdout=f)
+					p = subprocess.Popen(obj.cmd, shell=True, stdout=f)
 					myThread = Thread_timeperiod(name = obj.name)
 					myThread.start()
 					try:
-						patience = os.waitpid(0, os.WNOHANG)
+						patience = os.waitpid(p.pid, 0)
 					except OSError, err:
 						com[obj.name] = "ended"
 			else:
-				subprocess.Popen(obj.cmd, shell=True)
+				p = subprocess.Popen(obj.cmd, shell=True)
 				myThread = Thread_timeperiod(name = obj.name)
 				myThread.start()
 				try:
-					patience = os.waitpid(0, os.WNOHANG)
+					patience = os.waitpid(p.pid, 0)
 				except OSError, err:
 					com[obj.name] = "ended"
 			try:
@@ -160,7 +160,7 @@ class MyThread(threading.Thread):
 			except TypeError, err:
 				print "\033[91m{}\033[0m".format(err)
 				return
-		com[obj.name] = "ended"
+			com[obj.name] = "ended"
 		return
 
 
