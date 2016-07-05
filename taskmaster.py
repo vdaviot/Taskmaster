@@ -110,7 +110,7 @@ class MyThread(threading.Thread):
 						myThread = Thread_timeperiod(name = obj.name)
 						myThread.start()
 						try:
-							patience = os.waitpid(0, 0)
+							patience = os.waitpid(0, os.WNOHANG)
 						except OSError, err:
 							com[obj.name] = "ended"
 			elif obj.discard_err != None and obj.discard_out == None:
@@ -119,7 +119,7 @@ class MyThread(threading.Thread):
 					myThread = Thread_timeperiod(name = obj.name)
 					myThread.start()
 					try:
-						patience = os.waitpid(0, 0)
+						patience = os.waitpid(0, os.WNOHANG)
 					except OSError , err:
 						com[obj.name] = "ended"
 			elif obj.discard_out != None and obj.discard_err == None:
@@ -128,7 +128,7 @@ class MyThread(threading.Thread):
 					myThread = Thread_timeperiod(name = obj.name)
 					myThread.start()
 					try:
-						patience = os.waitpid(0, 0)
+						patience = os.waitpid(0, os.WNOHANG)
 					except OSError, err:
 						com[obj.name] = "ended"
 			else:
@@ -136,7 +136,7 @@ class MyThread(threading.Thread):
 				myThread = Thread_timeperiod(name = obj.name)
 				myThread.start()
 				try:
-					patience = os.waitpid(0, 0)
+					patience = os.waitpid(0, os.WNOHANG)
 				except OSError, err:
 					com[obj.name] = "ended"
 			try:
@@ -217,6 +217,7 @@ class Program(object):
 		else:
 			print "[{}]".format(pid)
 			return None
+
 	def	get_status(self):
 		if self.pid:
 			return 'RUNNING'
