@@ -40,3 +40,12 @@ Todo:
 		- A working directory to set before launching the program : √
 
 		- An umask to set before launching the program : √
+
+	Bonus:
+
+		- Sending informative mail on what's happened to your programs : √
+
+		- Better error handling : TODO
+
+		- Write any error in a recap file : TODO
+
