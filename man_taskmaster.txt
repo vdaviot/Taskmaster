@@ -1,0 +1,51 @@
+
+
+NAME
+
+	Taskmaster -- Little job daemon program
+
+AVAILABLE OPTIONS
+
+	You can use these options in the configuration file:
+
+		- name <str> 			(Name of the command)
+		- nb <int> 				(how many instance you need)
+		- options <str> 		(the options you want to use)
+		- boot <False or True> 	(To boot it at start or note)
+		- expected <int>		(The expected return value of your program)
+		- timeout <int>			(After how much time the program should be consider as dead)
+		- restarttry <int>		(How many time the program should be restarted after an unexpected failure)
+		- stopsignal <int>		(What signal should be used to close the program)
+		- timeperiod <int>		(After how much time the program should be consider as successfuly started)
+		- discard_out <path>	(Where the program have to redirect stdout)
+		- discard_err <path>	(Where the program have to redirect stderr)
+		- env <list of str>		(What environement variable should be used to launch the program)
+		- wd <path>				(Specify where the program should start his task)
+		- umask <int>			(Specify what set of right should be applicated to the program)
+
+	If you don't respect the specified args, the program won't work as you expect, be gentle !
+
+CONFIG FILE
+
+	A valid configuration file have to be designed with caution, an example is present as conf.yaml but feel free to make a new one following the scheme :
+
+	programs:
+		- name:
+			- options:
+			- options:
+			- options:
+			- options:
+			- options:
+		- name:
+			- options:
+			- options:
+			- options:
+			- options:
+		- name:
+			- options:
+			- options:
+			- options:
+
+
+
+						Thanks for using our Taskmaster!

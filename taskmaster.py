@@ -19,6 +19,23 @@ com = {}
 path = os.popen('pwd').read().replace('\n', '') + "/conf.yaml"
 SIGNALS_TO_NAMES_DICT = dict((getattr(signal, n), n) for n in dir(signal) if n.startswith('SIG') and '_' not in n )
 
+class ErrorHandling():
+	def __init__(self, error):
+		self.file = "error.txt"
+		self.time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+		self.error = str(self.time) + ":\n    - " + str(error) + "\n"
+		self.error_write(self.error)
+	
+	def error_write(self, error):
+		with open(self.file, 'a') as f:
+			try:
+				f.write(self.error)
+				f.write("\n")
+				f.close()
+				print "\033[91m{}\033[0m".format(self.error)
+			except IOError as err:
+				myerror = ErrorHandling(err)
+
 class User():
 	def __init__(self, mail):
 		self.mail = mail
@@ -42,8 +59,8 @@ class User():
 				server.login(self.mail, 'lhrcdzobskxqkmnd')
 				text = msg.as_string()
 				server.sendmail(self.mail, sendto, text)
-			except sm.SMTPException, err:
-				print "\033[91m{}\033[0m".format(err)
+			except sm.SMTPException as err:
+				MyError = ErrorHandling(err)
 
 class Thread_timeperiod(threading.Thread):
 	def run(self):
@@ -57,8 +74,6 @@ class Thread_timeperiod(threading.Thread):
 								return
 						com[self.name] = "running"
 		return
-
-
 
 class Thread_kill(threading.Thread):
 	def run(self):
@@ -85,7 +100,7 @@ class Thread_kill(threading.Thread):
 				if r == 1:
 					start(self.name)
 		except IOError as err:
-			print "IOError shou shou !!"
+			MyError = ErrorHandling(err)
 		return
 
 class MyThread(threading.Thread):
@@ -157,8 +172,8 @@ class MyThread(threading.Thread):
 					i  = i - 1
 				for ppl in People:
 					User.send_mail(ppl, ppl.mail, obj.strstatus, obj.status, obj)
-			except TypeError, err:
-				print "\033[91m{}\033[0m".format(err)
+			except TypeError as err:
+				MyError = ErrorHandling(err)
 				return
 			com[obj.name] = "ended"
 		return
@@ -171,8 +186,8 @@ class Program(object):
 			if pid != None:
 				try:
 					os.kill(int(pid), 11)
-				except OSError, err:
-					print "\033[91mError \"{}\" occured when closing the {} program.\033[0m".format(err, self.name)
+				except OSError as err:
+					MyError = ErrorHandling(err)
 					return
 				print "\033[92mProcess " + self.name + " ended.\033[0m"
 
@@ -183,8 +198,8 @@ class Program(object):
 				try:
 					os.kill(int(pid), sign)
 					print "\033[92mProcess " + self.name + " ended.\033[0m"
-				except OSError, err:
-					print "\033[91mProcess {} ({}) not killed because of reason.\033[0m".format(self.name, pid)
+				except OSError as err:
+					MyError = ErrorHandling(err)
 
 	def get_in_conf(self, arg, name, info):
 		try:
@@ -365,8 +380,8 @@ class Program(object):
 		if self.wd:
 			try:
 				os.chdir(self.wd)
-			except OSError:
-				print "\033[91m{} directory does not exist.\033[0m".format(self.wd)
+			except OSError as err:
+				MyError = ErrorHandling(err)
 		self.umask = self.get_umask(where)
 		if self.umask != None:
 			self.old_umask = os.umask(self.umask)
@@ -413,7 +428,7 @@ class	Microshell(cmd.Cmd):
 			try:
 				kill(p.name)
 			except IOError, err:
-				print "\033[91m{}\033[0m".format(err)
+				MyError = ErrorHandling(err)
 		conf = None
 		init()
 
@@ -455,6 +470,14 @@ class	Microshell(cmd.Cmd):
 		else:
 			print "{} is not in conf file".format(process_name)
 
+	def	do_man(self, cmd):
+		'Print the Taskmaster\'s man.'
+		try:
+			with open("man_taskmaster.txt", 'r') as file:
+				print file.read()
+				file.close()
+		except IOError as err:
+			MyError = ErrorHandling(err)
 # .
 # \'~~~-,
 #  \    '-,_ 
@@ -485,9 +508,6 @@ def	kill_thread():
 		if com[p] != "dead" and com[p] != "ready":
 			kill(p)
 
-def play(audio_file_path):
-    subprocess.call(["ffplay", "-nodisp", "-autoexit", audio_file_path])
-
 def	kill(process_name):
 	if process_name in com:
 		if com[process_name] == "running" or com[process_name] == "restart" or com[process_name] == "starting":
@@ -506,14 +526,18 @@ def signal_handler(signal, frame):
 def finish(value):
 	print ("\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	kill_thread()
+	try:
+		os.remove('error.txt')
+	except OSError as err:
+		MyError = ErrorHandling(err)
 	sys.exit(value)
 
-def get_conf():														#return the configuration
+def get_conf():
 	stream = open(path, 'r')
 	try:
 		return yaml.load(stream)
-	except yaml.YAMLError as exc:
-		print exc
+	except yaml.YAMLError as err:
+		MyError = ErrorHandling(err)
 		return None
 
 def	add_user(email):
@@ -529,7 +553,7 @@ def	parse_progs():
 				new = Program(meh, conf)
 				liste.append(new)
 		except TypeError as err:
-			print "\033[91m{}\033[0m".format(err)
+			MyError = ErrorHandling(err)
 	return liste
 
 def	start(process_name):
@@ -544,7 +568,7 @@ def	start(process_name):
 	else:
 		print "\033[91m{} is not in conf file\033[0m".format(process_name)
 
-def init():															#init
+def init():
 	global	conf
 	global  progs
 	progs = {}
@@ -557,6 +581,6 @@ def init():															#init
 			start(p.name)
 
 
-if __name__ == '__main__':											#main
+if __name__ == '__main__':
 	init()
 	Microshell().cmdloop()

@@ -45,11 +45,11 @@ Todo:
 
 		- Sending informative mail on what's happened to your programs : √
 
-		- Better error handling : TODO
+		- Better error handling : √
 
-		- Write any error in a recap file : TODO
+		- Write any error in a recap file : √
 
-		- Write a documentation : TODO STONED
+		- Write a documentation : √
 
 	BUG:
 
