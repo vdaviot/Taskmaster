@@ -75,6 +75,20 @@ class Thread_timeperiod(threading.Thread):
 						com[self.name] = "running"
 		return
 
+# class Thread_delay(threading.Thread):
+# 	def run(self):
+# 		t = time.time()
+# 		t = t + self.target
+# 		while time.time() < t:
+# 			continue
+# 		start(self.name)
+# 		return
+
+def delaying(process_name):
+	print "UESH"
+	start(process_name)
+	# print "UESH"
+
 class Thread_kill(threading.Thread):
 	def run(self):
 		try:
@@ -88,10 +102,13 @@ class Thread_kill(threading.Thread):
 				for p in progs:
 					if p.name == self.name:
 						p.suicide()
+						if p.get_pid() == "":
+							com[self.name] = "dead"
+							return
 						t = time.time()
 						while t + p.timeout > time.time():
 							pid = p.get_pid()
-							if pid == None:
+							if pid == "":
 								com[self.name] = "dead"
 								return
 						p.get_kill()
@@ -432,6 +449,11 @@ class	Microshell(cmd.Cmd):
 		conf = None
 		init()
 
+	def do_EOF(self, process_name):
+		'Exit the program.'
+		finish(0)
+		return True
+
 	def do_exit(self, arg):
 		'Exit the program.'
 		print "\033[92mThank you for using Taskmaster.{}\033[0m".format(arg)
@@ -459,6 +481,22 @@ class	Microshell(cmd.Cmd):
 		else:
 			print "{} not in conf file".format(process_name)
 
+	def do_delay(self, process_name):
+		'Start a program with delay'
+		tab = process_name.split()
+		for p in progs:
+			if p.name == tab[0]:
+				# t = time.time()
+				try:
+					print "{}".format(int(tab[1]))
+					t = threading.Timer(int(tab[1]), delaying, [tab[0]])
+					t.start()
+				except ValueError:
+					print "arg2 must be an integer"
+					return
+			# else:
+			# 	print "{} is not in conf file".format(tab[0])
+
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
 		if process_name in com:
@@ -468,7 +506,7 @@ class	Microshell(cmd.Cmd):
 			elif com[process_name] == "dead" or com[process_name] == "ended" or com[process_name] == "ready":
 				self.do_start(process_name)
 		else:
-			print "{} is not in conf file".format(process_name)
+			print "[{}] is not in conf file".format(process_name)
 
 	def	do_man(self, cmd):
 		'Print the Taskmaster\'s man.'

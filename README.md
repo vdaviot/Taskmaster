@@ -51,6 +51,4 @@ Todo:
 
 		- Write a documentation : √
 
-	BUG:
-
-		- timeout anyway verify pid
+		- Start a prog with delay : √
