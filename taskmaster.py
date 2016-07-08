@@ -12,6 +12,7 @@ global stream
 global thread_count
 global path
 global People
+global log
 People = []
 thread_count = None
 thread_count = 0
@@ -75,45 +76,36 @@ class Thread_timeperiod(threading.Thread):
 						com[self.name] = "running"
 		return
 
-# class Thread_delay(threading.Thread):
-# 	def run(self):
-# 		t = time.time()
-# 		t = t + self.target
-# 		while time.time() < t:
-# 			continue
-# 		start(self.name)
-# 		return
-
 def delaying(process_name):
-	print "UESH"
 	start(process_name)
-	# print "UESH"
 
 class Thread_kill(threading.Thread):
 	def run(self):
 		try:
 			if self.name in com:
-				print "bijour"
 				if com[self.name] == "restart":
 					r = 1
 				else:
 					r = 0
 				com[self.name] == "dying"
+				lo = open("log.txt", "a")
+				log = lo.fileno()
 				for p in progs:
 					if p.name == self.name:
 						p.suicide()
 						if p.get_pid() == "":
 							com[self.name] = "dead"
+							os.write(log, "{} have been stoped\n".format(self.name))
 							return
 						t = time.time()
 						while t + p.timeout > time.time():
 							pid = p.get_pid()
 							if pid == "":
 								com[self.name] = "dead"
+								os.write(log, "{} have been ended\n".format(self.name))
 								return
 						p.get_kill()
 						com[self.name] = "dead"
-				print "bye bye"
 				if r == 1:
 					start(self.name)
 		except IOError as err:
@@ -130,6 +122,8 @@ class MyThread(threading.Thread):
 	def run(self):
 		obj = self.choose()
 		tryit = obj.nb_restart
+		lo = open("log.txt", "a")
+		log = lo.fileno()
 		patience = 0
 		if obj == None:
 			return
@@ -174,7 +168,7 @@ class MyThread(threading.Thread):
 			try:
 				if isinstance(patience[1], int):
 					if int(patience[1]) != int(obj.expected):
-					 	print "\033[91m{} returned an error, expected {} got {}.\033[0m".format(obj.name, obj.expected, patience[1])
+					 	os.write(log, "\033[91m{} returned an error, expected {} got {}.\n\033[0m".format(obj.name, obj.expected, patience[1]))
 					 	obj.strstatus = "{} returned an error, expected {} got {}.\nBe carefull with the configuration file, the problem might come from yourself.\n".format(obj.name, obj.expected, patience[1])
 					 	sys.stdout.flush()
 					 	if tryit > 0:
@@ -206,7 +200,9 @@ class Program(object):
 				except OSError as err:
 					MyError = ErrorHandling(err)
 					return
-				print "\033[92mProcess " + self.name + " ended.\033[0m"
+				lo = open("log.txt", "a")
+				log = lo.fileno()
+				os.write(log, "\033[92mProcess " + self.name + " ended.\n\033[0m")
 
 	def suicide(self):
 		sign = self.get_stop_signal("programs")
@@ -214,7 +210,9 @@ class Program(object):
 			if pid != None:
 				try:
 					os.kill(int(pid), sign)
-					print "\033[92mProcess " + self.name + " ended.\033[0m"
+					lo = open("log.txt", "a")
+					log = lo.fileno()
+					os.write(log, "\033[92mProcess " + self.name + " ended.\n\033[0m")
 				except OSError as err:
 					MyError = ErrorHandling(err)
 
@@ -451,7 +449,8 @@ class	Microshell(cmd.Cmd):
 
 	def do_EOF(self, process_name):
 		'Exit the program.'
-		finish(0)
+		kill_thread()
+		sys.exit(0)
 		return True
 
 	def do_exit(self, arg):
@@ -562,7 +561,7 @@ def signal_handler(signal, frame):
     sys.exit(signal)
 
 def finish(value):
-	print ("\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
+	write(log, "\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	kill_thread()
 	try:
 		os.remove('error.txt')
@@ -597,7 +596,9 @@ def	parse_progs():
 def	start(process_name):
 	if process_name in com:
 		if com[process_name] == "ready" or com[process_name] == "dead" or com[process_name] == "ended":
-			print "\033[92mstarting {}\033[0m".format(process_name)
+			lo = open("log.txt", "a")
+			log = lo.fileno()
+			os.write(log, "\033[92mstarting {}\n\033[0m".format(process_name))
 			com[process_name] = "starting"
 			mythread = MyThread(name = process_name)
 			mythread.start()
@@ -611,6 +612,8 @@ def init():
 	global  progs
 	progs = {}
 	signal.signal(signal.SIGINT, signal_handler)
+	lo = open("log.txt", "a")
+	log = lo.fileno()
 	conf = get_conf()
 	progs = parse_progs()
 	for p in progs:
@@ -622,3 +625,4 @@ def init():
 if __name__ == '__main__':
 	init()
 	Microshell().cmdloop()
+	finish(1)
