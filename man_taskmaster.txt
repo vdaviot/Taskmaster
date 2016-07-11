@@ -27,7 +27,7 @@ AVAILABLE OPTIONS
 
 CONFIG FILE
 
-	A valid configuration file have to be designed with caution, an example is present as conf.yaml but feel free to make a new one following the scheme :
+	A valid configuration file have to be designed with caution, an example is present as conf.yaml but feel free to make a new one following this scheme :
 
 	programs:
 		- name:
