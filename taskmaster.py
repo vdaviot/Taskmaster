@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal
+import cmd, sys, os, signal, yaml, datetime, time, subprocess, threading, signal, re 
 import smtplib as sm
 import getpass
 from subprocess import check_output, Popen
@@ -33,15 +33,41 @@ class ErrorHandling():
 				f.write(self.error)
 				f.write("\n")
 				f.close()
-				print "\033[91m{}\033[0m".format(self.error)
+				print "\033[91m\n{}\033[0m".format(self.error)
 			except IOError as err:
 				myerror = ErrorHandling(err)
 
 class User():
 	def __init__(self, mail):
 		self.mail = mail
-		self.passwd = getpass.getpass("Enter you password: ")
+		valid = self.check_addr(self.mail)
+		if valid == True:
+			self.passwd = getpass.getpass(prompt="Enter your password: ")
+			try:
+				server = sm.SMTP('smtp.gmail.com:587')
+				# server = sm.SMTP('localhost')
+				# server.set_debuglevel(True)
+				server.starttls()
+				server.login(self.mail, self.passwd)
+			except sm.SMTPAuthenticationError as err:
+				MyError = ErrorHandling(err)
+				self.real = False
+				return
+		else:
+			self.real = False
+			return
 		print "New user set:\n- {}".format(self.mail)
+		self.real = True
+
+
+	def	check_addr(self, mail):
+		res = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail)
+		if res == None:
+			MyError = ErrorHandling("Not well formated email.")
+			return False
+		else:
+			return True
+
 
 	def	send_mail(self, sendto, content, status, obj):		#status 1 = error / status 0 = success
 		dest = sendto.split("@")[0]
@@ -427,7 +453,7 @@ class Program(object):
 
 
 class	Microshell(cmd.Cmd):
-	intro = '\033[92m' + '\n******************************************\n****      \033[0mWelcome in Taskmaster.      \033[92m****\n****\033[0m    Type help to list command.\033[92m    ****\n******************************************\n' + '\033[0m'
+	intro = '\033[92m' + '\n/****************************************\\\n|***      \033[0mWelcome in Taskmaster.      \033[92m***|\n|***\033[0m    Type help to list command.\033[92m    ***|\n\\****************************************/\n' + '\033[0m'
 	if "USER" in os.environ:
 		prompt = os.environ["USER"] + "@42>"
 		user = os.environ["USER"] + "@student.42.fr"
@@ -469,8 +495,13 @@ class	Microshell(cmd.Cmd):
 
 	def	do_user(self, mail):
 		'Define a new user. Taskmaster will send you email everytime something happend. Utilisation: user <mail> <passwd>'
+		if mail == "":
+			for ppl in People:
+				print ppl.mail
+			return
 		newppl = add_user(mail)
-		People.append(newppl)
+		if newppl.real == True:
+			People.append(newppl)
 
 	def	do_start(self, process_name):
 		'Start a program in the configuration file'
@@ -493,7 +524,6 @@ class	Microshell(cmd.Cmd):
 		tab = process_name.split()
 		for p in progs:
 			if p.name == tab[0]:
-				# t = time.time()
 				try:
 					print "{}".format(int(tab[1]))
 					t = threading.Timer(int(tab[1]), delaying, [tab[0]])
@@ -501,8 +531,6 @@ class	Microshell(cmd.Cmd):
 				except ValueError:
 					print "arg2 must be an integer"
 					return
-			# else:
-			# 	print "{} is not in conf file".format(tab[0])
 
 	def	do_restart(self, process_name):
 		'Restart a program in the configuration file'
