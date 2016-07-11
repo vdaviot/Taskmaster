@@ -550,7 +550,7 @@ def proc_is_chilling(process_name):
 
 def	kill_thread():
 	for p in com:
-		if com[p] != "dead" and com[p] != "ready":
+		if com[p] != "dead" and com[p] != "ready" and com[p] != "ended":
 			kill(p)
 
 def	kill(process_name):
