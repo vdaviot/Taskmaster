@@ -34,8 +34,8 @@ programs:
         - umask: Null
     - sleep:
         - name: sleep
-        - nb: 1
-        - options: !!str 20
+        - nb: 3
+        - options: !!str 10
         - boot: True
         - expected: 0
         - timeout: 5

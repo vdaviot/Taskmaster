@@ -241,7 +241,7 @@ class Program(object):
 		return False
 
 	def get_pid(self):
-		pid =  os.popen("pgrep " + self.name).read()
+		pid =  os.popen("pgrep " + self.cmdname).read()
 		if isinstance(pid, int) or isinstance(pid, list) or isinstance(pid, tuple) or isinstance(pid, str):
 			return pid
 		else:
@@ -252,6 +252,11 @@ class Program(object):
 		if self.pid:
 			return 'RUNNING'
 		return 'DEAD'
+
+	def	get_cmdname(self, arg):
+		cmdname = self.get_in_conf(arg, self.name, "name")
+		if isinstance(cmdname, str):
+			return cmdname
 
 	def	get_env(self, arg):
 		env = {}, self.get_in_conf(arg, self.name, "env")
@@ -345,6 +350,8 @@ class Program(object):
 				print "		- Program {} is {}.".format(self.name, self.status)
 				if self.number:
 					print "		- {} instance of {} program needed.".format(self.number, self.name)
+			if self.cmdname:
+				print "		- command : {}.".format(self.cmdname)
 			if self.boot:
 				print "		- Boot status: {}.".format(self.boot)
 			if self.expected:
@@ -353,7 +360,7 @@ class Program(object):
 				print "		- Timeout set to {}.".format(self.timeout)
 			if self.nb_restart:
 				print "		- If a problem happend, Taskmaster will restart {} {} times.".format(self.name, self.nb_restart)
-			if self.stopsignal:
+			if self.stop_signal:
 				print "		- {} will shutdown if {} is send.".format(self.name, self.stop_signal)
 			if self.time_period:
 				print "		- If a problem happend, {} will be kept alive for {} seconds.".format(self.name, self.time_period)
@@ -380,6 +387,7 @@ class Program(object):
 		where = "programs"
 		self.file = conf
 		self.name = process_name
+		self.cmdname = self.get_cmdname(where)
 		self.pid = self.get_pid()
 		self.status = self.get_status()
 		self.number = self.get_nb(where)
@@ -412,9 +420,9 @@ class Program(object):
 				pouet = cmd.keys()[0]
 				self.cmd += pouet + "=" + cmd.get(pouet) + " "
 		if self.options:
-			self.cmd += self.name + " " + self.options
+			self.cmd += self.cmdname + " " + self.options
 		else:
-			self.cmd += self.name
+			self.cmd += self.cmdname
 		self.strstatus = ""
 
 
@@ -470,7 +478,7 @@ class	Microshell(cmd.Cmd):
 			if p.name == process_name:
 				start(process_name)
 
-	def	do_kill(self, process_name):
+	def	do_stop(self, process_name):
 		'Stop a program started by Taskmaster'
 		if process_name in com:
 			if com[process_name] == "running" or com[process_name] == "starting":
@@ -561,7 +569,9 @@ def signal_handler(signal, frame):
     sys.exit(signal)
 
 def finish(value):
-	write(log, "\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
+	lo = open("log.txt", "a")
+	log = lo.fileno()
+	os.write(log, "\033[91mended: " + datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') + "\n" + "\033[0m")
 	kill_thread()
 	try:
 		os.remove('error.txt')
